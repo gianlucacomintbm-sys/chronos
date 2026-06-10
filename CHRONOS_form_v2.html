@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHRONOS — TBM Reporting</title>
+<style>
+  :root {
+    --ink:       #1a1a1a;
+    --ink-2:     #4a4a4a;
+    --ink-3:     #888;
+    --line:      #e0ddd8;
+    --line-2:    #ccc9c2;
+    --bg:        #f7f6f3;
+    --bg-card:   #ffffff;
+    --accent:    #1a3a5c;
+    --accent-lt: #e8eef4;
+    --accent-md: #3a6fa8;
+    --ok:        #2a7a4b;
+    --ok-lt:     #e6f4ec;
+    --warn:      #b45309;
+    --warn-lt:   #fef3e2;
+    --err:       #b91c1c;
+    --err-lt:    #fef2f2;
+    --radius:    6px;
+    --radius-lg: 10px;
+    --mono:      'Courier New', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: var(--ink); background: var(--bg); min-height: 100vh; }
+
+  .site-header { background: var(--accent); color: #fff; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .site-header .logo { font-size: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .site-header .sub { font-size: 11px; opacity: 0.65; letter-spacing: 0.06em; text-transform: uppercase; }
+  .project-badge { font-size: 12px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 20px; font-weight: 500; letter-spacing: 0.04em; }
+
+  .page-wrap { max-width: 740px; margin: 0 auto; padding: 36px 24px 80px; }
+
+  .progress-bar { display: flex; margin-bottom: 36px; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); }
+  .progress-step { flex: 1; padding: 10px 14px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--line); transition: background 0.15s; }
+  .progress-step:last-child { border-right: none; }
+  .progress-step.active { background: var(--accent); color: #fff; }
+  .progress-step.done { background: var(--ok-lt); color: var(--ok); }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .active .step-num { background: rgba(255,255,255,0.25); color: #fff; }
+  .done .step-num { background: var(--ok); color: #fff; }
+
+  .section-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg); margin-bottom: 20px; overflow: hidden; }
+  .section-head { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; background: #fafaf8; }
+  .section-icon { width: 28px; height: 28px; border-radius: var(--radius); background: var(--accent-lt); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-note { font-size: 11px; color: var(--ink-3); margin-left: auto; font-style: italic; }
+  .section-body { padding: 20px; }
+
+  .form-page { display: none; }
+  .form-page.active { display: block; }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.span2 { grid-column: span 2; }
+  label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+  label .required { color: var(--err); margin-left: 2px; }
+
+  input[type="text"], input[type="number"], input[type="month"], select, textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: var(--radius);
+    font-size: 14px; font-family: inherit; color: var(--ink); background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s; outline: none; appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent-md); box-shadow: 0 0 0 3px rgba(58,111,168,0.12); }
+  input.error, select.error { border-color: var(--err); }
+  input[readonly] { background: #f5f5f2; color: var(--ink-2); cursor: default; }
+
+  .period-toggle { display: flex; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; }
+  .period-toggle input[type="radio"] { display: none; }
+  .period-toggle label { flex: 1; padding: 9px 12px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--ink-2); background: #fff; border: none; transition: background 0.15s, color 0.15s; }
+  .period-toggle label:first-of-type { border-right: 1px solid var(--line-2); }
+  .period-toggle input:checked + label { background: var(--accent); color: #fff; }
+
+  .field-hint { font-size: 11px; color: var(--ink-3); font-style: italic; }
+
+  .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .check-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+  .check-item:hover { background: var(--accent-lt); border-color: var(--accent-md); }
+  .check-item input[type="checkbox"] { margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+  .check-item .check-label { font-size: 13px; color: var(--ink); line-height: 1.4; }
+  .check-item.has-detail { flex-direction: column; }
+  .check-item.has-detail .check-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+  .check-detail { display: none; margin-top: 6px; width: 100%; }
+  .check-detail.visible { display: block; }
+  .check-detail input { width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg); }
+  .check-note { font-size: 11px; color: var(--ink-3); font-style: italic; grid-column: span 2; padding: 6px 0 0; }
+
+  .numeric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .numeric-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .numeric-label { font-size: 13px; color: var(--ink); align-self: center; }
+  .numeric-input-wrap { position: relative; }
+  .numeric-input-wrap input { padding-right: 44px; font-family: var(--mono); }
+  .unit-badge { position: absolute; right: 1px; top: 1px; bottom: 1px; display: flex; align-items: center; padding: 0 10px; background: var(--bg); border-left: 1px solid var(--line-2); border-radius: 0 var(--radius) var(--radius) 0; font-size: 11px; color: var(--ink-3); font-weight: 600; font-family: var(--mono); }
+
+  .computed-field { background: var(--accent-lt); border: 1px solid #c8d8ea; border-radius: var(--radius); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .computed-label { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .computed-value { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+
+  .notes-area { background: #fffef8; border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 14px; margin-top: 4px; }
+  .notes-area textarea { border: none; background: transparent; padding: 0; font-size: 13px; min-height: 72px; resize: vertical; box-shadow: none; }
+  .notes-area textarea:focus { box-shadow: none; border: none; }
+
+  .upload-zone { border: 2px dashed var(--line-2); border-radius: var(--radius-lg); padding: 28px 24px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; background: #fafaf8; position: relative; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent-md); background: var(--accent-lt); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .upload-hint { font-size: 12px; color: var(--ink-3); }
+  .upload-hint strong { color: var(--accent-md); }
+
+  .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .file-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); font-size: 12px; }
+  .file-icon { font-size: 16px; }
+  .file-name { flex: 1; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-size { color: var(--ink-3); flex-shrink: 0; }
+  .file-remove { background: none; border: none; cursor: pointer; color: var(--ink-3); font-size: 16px; line-height: 1; padding: 2px 4px; border-radius: 3px; }
+  .file-remove:hover { color: var(--err); background: var(--err-lt); }
+
+  .info-box { background: var(--warn-lt); border: 1px solid #f3d5a3; border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--warn); margin-bottom: 14px; }
+  .info-box strong { font-weight: 600; }
+  .info-box table { margin-top: 8px; width: 100%; border-collapse: collapse; font-size: 11px; }
+  .info-box table th { text-align: left; padding: 3px 6px; background: rgba(180,83,9,0.08); color: var(--warn); font-weight: 600; }
+  .info-box table td { padding: 3px 6px; border-bottom: 1px solid rgba(180,83,9,0.12); color: var(--ink-2); }
+
+  .form-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .btn { padding: 10px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; letter-spacing: 0.02em; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #15304d; }
+  .btn-secondary { background: transparent; color: var(--ink-2); border: 1px solid var(--line-2); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-submit { background: var(--ok); color: #fff; padding: 12px 32px; font-size: 15px; }
+  .btn-submit:hover { background: #1f5e39; }
+
+  .field-error { font-size: 11px; color: var(--err); display: none; }
+  .field-error.visible { display: block; }
+
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table tr { border-bottom: 1px solid var(--line); }
+  .summary-table tr:last-child { border-bottom: none; }
+  .summary-table td { padding: 8px 4px; font-size: 13px; }
+  .summary-table td:first-child { color: var(--ink-3); width: 46%; font-size: 12px; }
+  .summary-table td:last-child { color: var(--ink); font-weight: 500; }
+  .summary-section-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); padding: 14px 0 6px; }
+
+  #submit-overlay { display: none; position: fixed; inset: 0; background: rgba(26,58,92,0.85); z-index: 999; flex-direction: column; align-items: center; justify-content: center; color: #fff; gap: 16px; }
+  #submit-overlay.visible { display: flex; }
+  .spinner { width: 44px; height: 44px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay-msg { font-size: 16px; font-weight: 500; }
+
+  #success-panel { display: none; text-align: center; padding: 48px 24px; }
+  #success-panel.visible { display: block; }
+  .success-icon { font-size: 52px; margin-bottom: 16px; }
+  .success-title { font-size: 22px; font-weight: 700; color: var(--ok); margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--ink-2); max-width: 400px; margin: 0 auto; }
+
+  @media (max-width: 560px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .field.span2 { grid-column: span 1; }
+    .checkbox-grid { grid-template-columns: 1fr; }
+    .check-note { grid-column: span 1; }
+    .progress-step { font-size: 9px; padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="logo">CHRONOS</div>
+    <div class="sub">TBM Monitoring — Worldwide</div>
+  </div>
+  <div class="project-badge" id="header-project-name">Loading…</div>
+</header>
+
+<div class="page-wrap">
+
+  <nav class="progress-bar" id="progress-bar">
+    <div class="progress-step active" data-step="1"><div class="step-num">1</div>Project info</div>
+    <div class="progress-step" data-step="2"><div class="step-num">2</div>Production data</div>
+    <div class="progress-step" data-step="3"><div class="step-num">3</div>Attachments</div>
+    <div class="progress-step" data-step="4"><div class="step-num">4</div>Review &amp; send</div>
+  </nav>
+
+  <form id="main-form" novalidate>
+
+    <!-- PAGE 1 — Project info -->
+    <div class="form-page active" data-page="1">
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">📅</div><div class="section-title">Period of reference</div></div>
+        <div class="section-body">
+          <div class="field-grid">
+            <div class="field">
+              <label for="month">Month <span class="required">*</span></label>
+              <input type="month" id="month" name="month" required>
+              <div class="field-error" id="err-month">Please select a month.</div>
+            </div>
+            <div class="field">
+              <label>Half <span class="required">*</span></label>
+              <div class="period-toggle">
+                <input type="radio" id="half-1" name="half" value="1st half" checked>
+                <label for="half-1">1st half (1–15)</label>
+                <input type="radio" id="half-2" name="half" value="2nd half">
+                <label for="half-2">2nd half (16–end)</label>
+              </div>
+            </div>
+          </div>
+          <p class="field-hint" style="margin-top:10px;">1st half: 6:00 AM day 1 → 6:00 AM day 16 &nbsp;|&nbsp; 2nd half: 6:00 AM day 16 → 6:00 AM day 1 (next month)</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">🏗️</div><div class="section-title">Project identification</div></div>
+        <div class="section-body">
+          <div class="field-grid">
+            <div class="field">
+              <label for="country-project">Country / Project <span class="required">*</span></label>
+              <input type="text" id="country-project" name="country_project" required readonly>
+            </div>
+            <div class="field">
+              <label for="tunnel">Tunnel <span class="required">*</span></label>
+              <input type="text" id="tunnel" name="tunnel" required readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">⚙️</div><div class="section-title">Project status</div><span class="section-note">Multiple selection — referred to TBM drives</span></div>
+        <div class="section-body">
+          <div class="checkbox-grid">
+            <label class="check-item"><input type="checkbox" name="status" value="FAT"><span class="check-label">FAT</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="Preparatory civil works"><span class="check-label">Preparatory civil works</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM preassembly"><span class="check-label">TBM preassembly</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM assembly"><span class="check-label">TBM assembly</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM commissioning"><span class="check-label">TBM commissioning</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM learning curve"><span class="check-label">TBM learning curve</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="On-going"><span class="check-label">On-going</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM dismantling"><span class="check-label">TBM dismantling</span></label>
+            <div class="check-item has-detail">
+              <div class="check-row"><input type="checkbox" id="cb-planned" name="status" value="Planned standstill"><span class="check-label">Planned standstill</span></div>
+              <div class="check-detail" id="detail-planned"><input type="text" name="planned_standstill_detail" placeholder="Specify reason…"></div>
+            </div>
+            <div class="check-item has-detail">
+              <div class="check-row"><input type="checkbox" id="cb-unplanned" name="status" value="Unplanned standstill"><span class="check-label">Unplanned standstill</span></div>
+              <div class="check-detail" id="detail-unplanned"><input type="text" name="unplanned_standstill_detail" placeholder="Specify reason…"></div>
+            </div>
+            <div class="check-item has-detail">
+              <div class="check-row"><input type="checkbox" id="cb-drive" name="status" value="Drive completed"><span class="check-label">Drive completed</span></div>
+              <div class="check-detail" id="detail-drive">
+                <input type="date" name="drive_completed_date" style="width:100%">
+              </div>
+            </div>
+            <div class="check-item has-detail">
+              <div class="check-row"><input type="checkbox" id="cb-rtb" name="status" value="Ready to Bore (RTB)"><span class="check-label">Ready to Bore (RTB)</span></div>
+              <div class="check-detail" id="detail-rtb">
+                <input type="date" name="rtb_date" style="width:100%">
+              </div>
+            </div>
+            <div class="check-item has-detail" style="grid-column:span 2">
+              <div class="check-row"><input type="checkbox" id="cb-other" name="status" value="Other critical issues"><span class="check-label">Other critical issues or events penalizing the project</span></div>
+              <div class="check-detail" id="detail-other"><input type="text" name="other_issues_detail" placeholder="Specify…"></div>
+            </div>
+            <p class="check-note">NOTE: multiple selection accepted</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <div></div>
+        <button type="button" class="btn btn-primary" onclick="goToPage(2)">Continue → Production data</button>
+      </div>
+    </div>
+
+    <!-- PAGE 2 — Production data -->
+    <div class="form-page" data-page="2">
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">📏</div><div class="section-title">Cumulative production</div></div>
+        <div class="section-body">
+          <div class="numeric-row">
+            <div class="numeric-label">At period start</div>
+            <div class="numeric-input-wrap"><input type="number" name="cum_prod_start" id="cum-start" placeholder="0.00" step="0.01" min="0" oninput="computeProduction()"><span class="unit-badge">m</span></div>
+          </div>
+          <div class="numeric-row">
+            <div class="numeric-label">At period end</div>
+            <div class="numeric-input-wrap"><input type="number" name="cum_prod_end" id="cum-end" placeholder="0.00" step="0.01" min="0" oninput="computeProduction()"><span class="unit-badge">m</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">📍</div><div class="section-title">Chainage</div></div>
+        <div class="section-body">
+          <div class="numeric-row">
+            <div class="numeric-label">At period start</div>
+            <div class="numeric-input-wrap"><input type="number" name="chainage_start" id="chainage-start" placeholder="0.00" step="0.01" min="0" oninput="computeProduction()"><span class="unit-badge">m</span></div>
+          </div>
+          <div class="numeric-row">
+            <div class="numeric-label">At period end</div>
+            <div class="numeric-input-wrap"><input type="number" name="chainage_end" id="chainage-end" placeholder="0.00" step="0.01" min="0" oninput="computeProduction()"><span class="unit-badge">m</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">⏱️</div><div class="section-title">Time breakdown</div><span class="section-note">Referred to period of reference</span></div>
+        <div class="section-body">
+          <div class="numeric-row">
+            <div class="numeric-label">Boring time</div>
+            <div class="numeric-input-wrap"><input type="number" name="boring_time" placeholder="0.0" step="0.1" min="0"><span class="unit-badge">h</span></div>
+          </div>
+          <div class="numeric-row">
+            <div class="numeric-label">Ring building time</div>
+            <div class="numeric-input-wrap"><input type="number" name="ring_building_time" placeholder="0.0" step="0.1" min="0"><span class="unit-badge">h</span></div>
+          </div>
+          <div class="numeric-row">
+            <div class="numeric-label">Standstill time</div>
+            <div class="numeric-input-wrap"><input type="number" name="standstill_time" placeholder="0.0" step="0.1" min="0"><span class="unit-badge">m</span></div>
+          </div>
+          <div class="computed-field" id="computed-field-wrap">
+            <span class="computed-label">Total production (period)</span>
+            <span class="computed-value" id="total-prod-val">— m</span>
+          </div>
+          <div id="chainage-warning" style="display:none; margin-top:10px; padding:10px 14px; background:var(--warn-lt); border:1px solid #f3d5a3; border-radius:var(--radius); font-size:12px; color:var(--warn);">
+            ⚠️ <strong>Chainage mismatch:</strong> the chainage delta (<span id="chainage-delta-val">—</span> m) does not match the cumulative production delta (<span id="prod-delta-val">—</span> m). Please verify.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-icon">📝</div>
+          <div class="section-title">Standstill notes</div>
+          <span class="section-note">Sum of hours must equal Standstill time</span>
+        </div>
+        <div class="section-body">
+          <div style="display:grid; grid-template-columns:100px 1fr 36px; gap:8px; margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Hours</div>
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Description</div>
+            <div></div>
+          </div>
+          <div id="standstill-rows"></div>
+          <button type="button" onclick="addStandstillRow()" style="margin-top:10px; background:none; border:1px dashed var(--line-2); border-radius:var(--radius); padding:7px 16px; font-size:12px; color:var(--accent-md); cursor:pointer; width:100%;">+ Add row</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:10px 14px; background:var(--accent-lt); border:1px solid #c8d8ea; border-radius:var(--radius);">
+            <span style="font-size:12px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em;">Total standstill hours (notes)</span>
+            <span id="standstill-sum" style="font-size:18px; font-weight:700; color:var(--accent); font-family:var(--mono);">0.0 h</span>
+          </div>
+          <div id="standstill-warning" style="display:none; margin-top:8px; padding:10px 14px; background:var(--err-lt); border:1px solid #fca5a5; border-radius:var(--radius); font-size:12px; color:var(--err);">
+            ⚠️ <strong>Hours mismatch:</strong> notes total (<span id="sw-notes-val">—</span> h) ≠ standstill time declared (<span id="sw-declared-val">—</span> h). Please reconcile before submitting.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button type="button" class="btn btn-secondary" onclick="goToPage(1)">← Back</button>
+        <button type="button" class="btn btn-primary" onclick="goToPage(3)">Continue → Attachments</button>
+      </div>
+    </div>
+
+    <!-- PAGE 3 — Attachments -->
+    <div class="form-page" data-page="3">
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">📄</div><div class="section-title">Project documents</div><span class="section-note">Reports, photos, drawings…</span></div>
+        <div class="section-body">
+          <div class="upload-zone" id="zone-docs" ondragover="handleDragOver(event,'docs')" ondragleave="handleDragLeave('docs')" ondrop="handleDrop(event,'docs')">
+            <input type="file" id="input-docs" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.zip" onchange="handleFiles(this.files,'docs')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-title">Drop files here or click to browse</div>
+            <div class="upload-hint">PDF, Word, PowerPoint, images, ZIP &nbsp;·&nbsp; <strong>Max 50 MB per file</strong></div>
+          </div>
+          <div class="file-list" id="list-docs"></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">🔩</div><div class="section-title">TBM operational data</div><span class="section-note">Daily log — Sheet 2 format</span></div>
+        <div class="section-body">
+          <div class="info-box">
+            <strong>Expected file format — Sheet 2 structure:</strong> one row per day. Average values during boring time, except Liquid volume, Muck weight and Grout volume (max).
+            <table>
+              <tr><th>Column</th><th>Unit</th><th>Note</th></tr>
+              <tr><td>Day</td><td>—</td><td>1–15 (1st half) or 16–end (2nd half)</td></tr>
+              <tr><td>Advance speed</td><td>mm/min</td><td>Avg boring time</td></tr>
+              <tr><td>Penetration</td><td>mm/rev</td><td>Avg boring time</td></tr>
+              <tr><td>Total thrust force</td><td>kN</td><td>Avg boring time</td></tr>
+              <tr><td>Torque CH</td><td>kNm</td><td>Avg boring time</td></tr>
+              <tr><td>Articulation / contact force</td><td>kN</td><td>Avg boring time</td></tr>
+              <tr><td>Face pressure crown</td><td>bar</td><td>Avg boring time</td></tr>
+              <tr><td>Face pressure invert</td><td>bar</td><td>Avg boring time</td></tr>
+              <tr><td>Foam volume</td><td>m³</td><td>Avg boring time</td></tr>
+              <tr><td>Liquid volume</td><td>m³</td><td><strong>Max</strong> boring time</td></tr>
+              <tr><td>Muck weight</td><td>tons</td><td><strong>Max</strong> boring time</td></tr>
+              <tr><td>Grout volume</td><td>m³</td><td><strong>Max</strong> boring time</td></tr>
+              <tr><td>Observation</td><td>—</td><td>Anomalies / deviations from normal ranges</td></tr>
+            </table>
+          </div>
+          <div class="upload-zone" id="zone-tbm" ondragover="handleDragOver(event,'tbm')" ondragleave="handleDragLeave('tbm')" ondrop="handleDrop(event,'tbm')">
+            <input type="file" id="input-tbm" multiple accept=".xlsx,.xls,.csv,.txt" onchange="handleFiles(this.files,'tbm')">
+            <div class="upload-icon">📊</div>
+            <div class="upload-title">Drop TBM data file here or click to browse</div>
+            <div class="upload-hint">Excel (.xlsx, .xls) or CSV &nbsp;·&nbsp; <strong>Max 50 MB per file</strong></div>
+          </div>
+          <div class="file-list" id="list-tbm"></div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button type="button" class="btn btn-secondary" onclick="goToPage(2)">← Back</button>
+        <button type="button" class="btn btn-primary" onclick="goToPage(4)">Continue → Review</button>
+      </div>
+    </div>
+
+    <!-- PAGE 4 — Review & send -->
+    <div class="form-page" data-page="4">
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">✅</div><div class="section-title">Review before sending</div></div>
+        <div class="section-body" id="summary-body"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">👤</div><div class="section-title">Submitted by</div></div>
+        <div class="section-body">
+          <div class="field-grid">
+            <div class="field">
+              <label for="submitter-name">Name <span class="required">*</span></label>
+              <input type="text" id="submitter-name" name="submitter_name" placeholder="First and last name" required>
+              <div class="field-error" id="err-name">Required field.</div>
+            </div>
+            <div class="field">
+              <label for="submitter-role">Role</label>
+              <input type="text" id="submitter-role" name="submitter_role" placeholder="e.g. TBM Engineer">
+            </div>
+            <div class="field span2">
+              <label for="submitter-email">Email <span class="required">*</span></label>
+              <input type="text" id="submitter-email" name="submitter_email" placeholder="name@company.com" required>
+              <div class="field-error" id="err-email">Please enter a valid email.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button type="button" class="btn btn-secondary" onclick="goToPage(3)">← Back</button>
+        <button type="button" class="btn btn-primary btn-submit" id="submit-btn" onclick="submitForm()">✓ Submit report</button>
+      </div>
+    </div>
+
+  </form>
+
+  <div id="success-panel">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Report submitted successfully</div>
+    <p class="success-sub" id="success-msg">Your data has been recorded. Thank you.</p>
+  </div>
+
+</div>
+
+<div id="submit-overlay">
+  <div class="spinner"></div>
+  <div class="overlay-msg">Uploading files and saving data…</div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzgM7yBwGkFC4Pv_R2ZOHSuybVf3ulKjmSpnPSd0pkZOo2CIsEP5pgoV-92pXgdKC1y/exec';
+
+// ── URL params: ?project=...&tunnel=... ─────────────────────
+const params = new URLSearchParams(window.location.search);
+const PROJECT_NAME = params.get('project') || 'Project not specified';
+const TUNNEL_NAME  = params.get('tunnel')  || 'Tunnel not specified';
+document.getElementById('header-project-name').textContent = PROJECT_NAME;
+document.getElementById('country-project').value = PROJECT_NAME;
+document.getElementById('tunnel').value = TUNNEL_NAME;
+
+// ── File store ──────────────────────────────────────────────
+const fileStore = { docs: [], tbm: [] };
+const FILE_ICONS = { pdf:'📕', xlsx:'📗', xls:'📗', csv:'📊', doc:'📘', docx:'📘', ppt:'📙', pptx:'📙', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', zip:'🗜️' };
+const getIcon = f => FILE_ICONS[f.split('.').pop().toLowerCase()] || '📄';
+const fmtSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
+
+function handleFiles(files, type) {
+  Array.from(files).forEach(f => {
+    if (f.size > 52428800) { alert('"' + f.name + '" exceeds the 50 MB limit.'); return; }
+    if (!fileStore[type].find(x => x.name === f.name && x.size === f.size)) fileStore[type].push(f);
+  });
+  renderFileList(type);
+}
+function removeFile(type, idx) { fileStore[type].splice(idx,1); renderFileList(type); }
+function renderFileList(type) {
+  document.getElementById('list-'+type).innerHTML = fileStore[type].map((f,i) =>
+    `<div class="file-item"><span class="file-icon">${getIcon(f.name)}</span><span class="file-name">${f.name}</span><span class="file-size">${fmtSize(f.size)}</span><button type="button" class="file-remove" onclick="removeFile('${type}',${i})">×</button></div>`
+  ).join('');
+}
+function handleDragOver(e, type) { e.preventDefault(); document.getElementById('zone-'+type).classList.add('drag-over'); }
+function handleDragLeave(type) { document.getElementById('zone-'+type).classList.remove('drag-over'); }
+function handleDrop(e, type) { e.preventDefault(); handleDragLeave(type); handleFiles(e.dataTransfer.files, type); }
+
+// ── Computed production + chainage consistency check ─────────
+function computeProduction() {
+  const s  = parseFloat(document.getElementById('cum-start').value);
+  const e  = parseFloat(document.getElementById('cum-end').value);
+  const cs = parseFloat(document.getElementById('chainage-start').value);
+  const ce = parseFloat(document.getElementById('chainage-end').value);
+
+  const prodDelta     = (!isNaN(s) && !isNaN(e) && e >= s) ? e - s : null;
+  const chainageDelta = (!isNaN(cs) && !isNaN(ce) && ce >= cs) ? ce - cs : null;
+
+  document.getElementById('total-prod-val').textContent = prodDelta !== null ? prodDelta.toFixed(2)+' m' : '— m';
+
+  // Chainage warning: show only when both deltas are available and differ by more than 0.05 m
+  const warn = document.getElementById('chainage-warning');
+  if (prodDelta !== null && chainageDelta !== null && Math.abs(prodDelta - chainageDelta) > 0.05) {
+    document.getElementById('chainage-delta-val').textContent = chainageDelta.toFixed(2);
+    document.getElementById('prod-delta-val').textContent     = prodDelta.toFixed(2);
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+// ── Standstill rows ──────────────────────────────────────────
+let standstillRowCount = 0;
+
+function addStandstillRow() {
+  standstillRowCount++;
+  const id = 'sr-' + standstillRowCount;
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'display:grid; grid-template-columns:100px 1fr 36px; gap:8px; margin-bottom:8px;';
+  div.innerHTML = `
+    <div style="position:relative;">
+      <input type="number" min="0" step="0.1" placeholder="0.0"
+        style="width:100%; padding:9px 36px 9px 12px; border:1px solid var(--line-2); border-radius:var(--radius); font-size:14px; font-family:inherit; outline:none;"
+        oninput="updateStandstillSum()" class="sr-hours">
+      <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--ink-3); font-weight:600;">h</span>
+    </div>
+    <input type="text" placeholder="Description of standstill event…"
+      style="width:100%; padding:9px 12px; border:1px solid var(--line-2); border-radius:var(--radius); font-size:14px; font-family:inherit; outline:none;"
+      class="sr-desc">
+    <button type="button" onclick="removeStandstillRow('${id}')"
+      style="background:none; border:1px solid var(--line-2); border-radius:var(--radius); cursor:pointer; color:var(--ink-3); font-size:16px; line-height:1; transition:all 0.12s;"
+      onmouseover="this.style.color='var(--err)'; this.style.borderColor='var(--err)'"
+      onmouseout="this.style.color='var(--ink-3)'; this.style.borderColor='var(--line-2)'">×</button>`;
+  document.getElementById('standstill-rows').appendChild(div);
+  updateStandstillSum();
+}
+
+function removeStandstillRow(id) {
+  document.getElementById(id)?.remove();
+  updateStandstillSum();
+}
+
+function updateStandstillSum() {
+  const hours = [...document.querySelectorAll('.sr-hours')].map(i => parseFloat(i.value) || 0);
+  const sum = hours.reduce((a, b) => a + b, 0);
+  document.getElementById('standstill-sum').textContent = sum.toFixed(1) + ' h';
+
+  const declared = parseFloat(document.querySelector('[name="standstill_time"]')?.value) || 0;
+  const warn = document.getElementById('standstill-warning');
+  if (hours.length > 0 && Math.abs(sum - declared) > 0.05) {
+    document.getElementById('sw-notes-val').textContent    = sum.toFixed(1);
+    document.getElementById('sw-declared-val').textContent = declared.toFixed(1);
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+// Also trigger standstill check when standstill_time field changes
+document.addEventListener('DOMContentLoaded', () => {
+  const stField = document.querySelector('[name="standstill_time"]');
+  if (stField) stField.addEventListener('input', updateStandstillSum);
+  // Add first row by default
+  addStandstillRow();
+});
+
+// ── Checkbox details toggle ─────────────────────────────────
+['planned','unplanned','other','drive','rtb'].forEach(id => {
+  const cb = document.getElementById('cb-'+id);
+  const det = document.getElementById('detail-'+id);
+  if (cb && det) cb.addEventListener('change', () => det.classList.toggle('visible', cb.checked));
+});
+
+// ── Navigation ──────────────────────────────────────────────
+let currentPage = 1;
+function goToPage(n) {
+  if (n > currentPage && !validatePage(currentPage)) return;
+  document.querySelector(`.form-page[data-page="${currentPage}"]`).classList.remove('active');
+  document.querySelector(`.progress-step[data-step="${currentPage}"]`).classList.replace('active','done');
+  currentPage = n;
+  document.querySelector(`.form-page[data-page="${n}"]`).classList.add('active');
+  document.querySelectorAll('.progress-step').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.classList.toggle('active', sn === n);
+    if (sn > n) s.classList.remove('done');
+  });
+  if (n === 4) buildSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validatePage(n) {
+  let ok = true;
+  if (n === 1) {
+    const m = document.getElementById('month');
+    const em = document.getElementById('err-month');
+    if (!m.value) { m.classList.add('error'); em.classList.add('visible'); ok = false; }
+    else { m.classList.remove('error'); em.classList.remove('visible'); }
+  }
+  if (n === 2) {
+    // Block if standstill warning is visible
+    const warn = document.getElementById('standstill-warning');
+    if (warn && warn.style.display !== 'none') {
+      alert('Please reconcile standstill hours before continuing.\nNotes total must equal Standstill time declared.');
+      ok = false;
+    }
+  }
+  if (n === 4) {
+    const name = document.getElementById('submitter-name');
+    const email = document.getElementById('submitter-email');
+    if (!name.value.trim()) { name.classList.add('error'); document.getElementById('err-name').classList.add('visible'); ok = false; }
+    else { name.classList.remove('error'); document.getElementById('err-name').classList.remove('visible'); }
+    if (!email.value.includes('@')) { email.classList.add('error'); document.getElementById('err-email').classList.add('visible'); ok = false; }
+    else { email.classList.remove('error'); document.getElementById('err-email').classList.remove('visible'); }
+  }
+  return ok;
+}
+
+// ── Collect standstill rows into structured string ───────────
+function getStandstillNotes() {
+  const rows = [...document.querySelectorAll('#standstill-rows > div')];
+  return rows.map(row => {
+    const h = row.querySelector('.sr-hours')?.value || '0';
+    const d = row.querySelector('.sr-desc')?.value || '';
+    return h && d ? h + ' h => ' + d : '';
+  }).filter(Boolean).join('\n');
+}
+
+// ── Summary ─────────────────────────────────────────────────
+function buildSummary() {
+  const fd = new FormData(document.getElementById('main-form'));
+  const statuses = [...document.querySelectorAll('[name="status"]:checked')].map(c => c.value).join(', ') || '—';
+  const totalProd = document.getElementById('total-prod-val').textContent;
+  const docCount = fileStore.docs.length;
+  const tbmCount = fileStore.tbm.length;
+  document.getElementById('summary-body').innerHTML = `
+    <div class="summary-section-head">Period &amp; project</div>
+    <table class="summary-table">
+      <tr><td>Period</td><td>${fd.get('month')} — ${document.querySelector('[name="half"]:checked')?.value||'—'}</td></tr>
+      <tr><td>Country / Project</td><td>${fd.get('country_project')}</td></tr>
+      <tr><td>Tunnel</td><td>${fd.get('tunnel')}</td></tr>
+      <tr><td>Project status</td><td>${statuses}</td></tr>
+    </table>
+    <div class="summary-section-head">Production data</div>
+    <table class="summary-table">
+      <tr><td>Cumulative production — start</td><td>${fd.get('cum_prod_start')||'—'} m</td></tr>
+      <tr><td>Cumulative production — end</td><td>${fd.get('cum_prod_end')||'—'} m</td></tr>
+      <tr><td>Total production (period)</td><td>${totalProd}</td></tr>
+      <tr><td>Chainage — start</td><td>${fd.get('chainage_start')||'—'} m</td></tr>
+      <tr><td>Chainage — end</td><td>${fd.get('chainage_end')||'—'} m</td></tr>
+      <tr><td>Boring time</td><td>${fd.get('boring_time')||'—'} h</td></tr>
+      <tr><td>Ring building time</td><td>${fd.get('ring_building_time')||'—'} h</td></tr>
+      <tr><td>Standstill time</td><td>${fd.get('standstill_time')||'—'} h</td></tr>
+      <tr><td>Standstill notes</td><td style="white-space:pre-line; font-size:12px;">${getStandstillNotes() || '—'}</td></tr>
+    </table>
+    <div class="summary-section-head">Attachments</div>
+    <table class="summary-table">
+      <tr><td>Project documents</td><td>${docCount ? docCount+' file(s): '+fileStore.docs.map(f=>f.name).join(', ') : 'None'}</td></tr>
+      <tr><td>TBM operational data</td><td>${tbmCount ? tbmCount+' file(s): '+fileStore.tbm.map(f=>f.name).join(', ') : 'None'}</td></tr>
+    </table>`;
+}
+
+// ── File → base64 ───────────────────────────────────────────
+const fileToBase64 = f => new Promise((res,rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result.split(',')[1]);
+  r.onerror = rej;
+  r.readAsDataURL(f);
+});
+
+// ── Submit ──────────────────────────────────────────────────
+async function submitForm() {
+  if (!validatePage(4)) return;
+  document.getElementById('submit-overlay').classList.add('visible');
+  document.getElementById('submit-btn').disabled = true;
+
+  const fd = new FormData(document.getElementById('main-form'));
+  const statuses = [...document.querySelectorAll('[name="status"]:checked')].map(c => c.value);
+
+  const payload = {
+    month: fd.get('month'),
+    half: fd.get('half'),
+    country_project: fd.get('country_project'),
+    tunnel: fd.get('tunnel'),
+    project_status: statuses.join(' | '),
+    planned_standstill_detail: fd.get('planned_standstill_detail') || '',
+    unplanned_standstill_detail: fd.get('unplanned_standstill_detail') || '',
+    other_issues_detail: fd.get('other_issues_detail') || '',
+    drive_completed_date: fd.get('drive_completed_date') || '',
+    rtb_date: fd.get('rtb_date') || '',
+    cum_prod_start: fd.get('cum_prod_start') || '',
+    cum_prod_end: fd.get('cum_prod_end') || '',
+    total_production: document.getElementById('total-prod-val').textContent,
+    chainage_start: fd.get('chainage_start') || '',
+    chainage_end: fd.get('chainage_end') || '',
+    boring_time: fd.get('boring_time') || '',
+    ring_building_time: fd.get('ring_building_time') || '',
+    standstill_time: fd.get('standstill_time') || '',
+    standstill_notes: getStandstillNotes(),
+    submitter_name: fd.get('submitter_name'),
+    submitter_role: fd.get('submitter_role') || '',
+    submitter_email: fd.get('submitter_email'),
+    submitted_at: new Date().toISOString(),
+    files_docs: [],
+    files_tbm: []
+  };
+
+  try {
+    for (const f of fileStore.docs) payload.files_docs.push({ name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
+    for (const f of fileStore.tbm)  payload.files_tbm.push({  name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
+  } catch(e) {
+    alert('Error reading files. Please try again.');
+    document.getElementById('submit-overlay').classList.remove('visible');
+    document.getElementById('submit-btn').disabled = false;
+    return;
+  }
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const result = await resp.json();
+    document.getElementById('submit-overlay').classList.remove('visible');
+    if (result.status === 'ok') {
+      document.getElementById('main-form').style.display = 'none';
+      document.getElementById('progress-bar').style.display = 'none';
+      document.getElementById('success-panel').classList.add('visible');
+      document.getElementById('success-msg').textContent =
+        `Data for ${payload.country_project} — ${payload.tunnel} (${payload.month}, ${payload.half}) has been recorded. Files saved to Google Drive.`;
+    } else {
+      throw new Error(result.message || 'Unknown error');
+    }
+  } catch(e) {
+    document.getElementById('submit-overlay').classList.remove('visible');
+    document.getElementById('submit-btn').disabled = false;
+    alert('Submission error: ' + e.message + '\n\nPlease check your connection and try again.');
+  }
+}
+</script>
+</body>
+</html>

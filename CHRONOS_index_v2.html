@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHRONOS — World Index</title>
+<style>
+  :root {
+    --ink:       #1a1a1a;
+    --ink-2:     #4a4a4a;
+    --ink-3:     #888;
+    --line:      #e0ddd8;
+    --line-2:    #ccc9c2;
+    --bg:        #f7f6f3;
+    --bg-card:   #ffffff;
+    --accent:    #1a3a5c;
+    --accent-lt: #e8eef4;
+    --accent-md: #3a6fa8;
+    --ok:        #2a7a4b;
+    --ok-lt:     #e6f4ec;
+    --warn:      #b45309;
+    --warn-lt:   #fef3e2;
+    --err:       #b91c1c;
+    --err-lt:    #fef2f2;
+    --radius:    6px;
+    --radius-lg: 10px;
+    --mono:      'Courier New', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5; color: var(--ink); background: var(--bg); min-height: 100vh; }
+
+  /* ── Header ── */
+  .site-header { background: var(--accent); color: #fff; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .sub { font-size: 11px; opacity: 0.65; letter-spacing: 0.06em; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .badge-count { font-size: 12px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 20px; }
+
+  /* ── Layout ── */
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 2px solid var(--line); padding-bottom: 0; }
+  .tab-btn { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; letter-spacing: 0.02em; }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Section header ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .section-title-wrap h2 { font-size: 16px; font-weight: 700; color: var(--ink); }
+  .section-title-wrap p { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  /* ── Toolbar ── */
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .search-box { padding: 8px 12px; border: 1px solid var(--line-2); border-radius: var(--radius); font-size: 13px; font-family: inherit; outline: none; width: 220px; transition: border-color 0.15s; }
+  .search-box:focus { border-color: var(--accent-md); }
+  .btn { padding: 8px 16px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; letter-spacing: 0.02em; display: flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #15304d; }
+  .btn-secondary { background: var(--bg-card); color: var(--ink-2); border: 1px solid var(--line-2); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-ok { background: var(--ok); color: #fff; }
+  .btn-ok:hover { background: #1f5e39; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  /* ── Table wrapper ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg-card); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { background: var(--accent); color: #fff; }
+  thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1); }
+  thead th:last-child { border-right: none; }
+  tbody tr { border-bottom: 1px solid var(--line); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--accent-lt); }
+  tbody tr.country-header { background: #f0f0ec; }
+  tbody td { padding: 9px 12px; vertical-align: top; border-right: 1px solid var(--line); }
+  tbody td:last-child { border-right: none; }
+  .country-cell { font-weight: 700; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .project-cell { font-weight: 600; color: var(--ink); }
+  .tunnel-cell { color: var(--ink-2); }
+  .mono { font-family: var(--mono); font-size: 11px; }
+
+  /* ── Status badge ── */
+  .status-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .status-ongoing   { background: var(--ok-lt);   color: var(--ok); }
+  .status-tostart   { background: var(--accent-lt); color: var(--accent); }
+  .status-completed { background: #f0f0ec; color: var(--ink-3); }
+  .status-fat       { background: var(--warn-lt); color: var(--warn); }
+
+  /* ── Editable cell ── */
+  .editable { cursor: pointer; min-width: 60px; }
+  .editable:hover { background: #fffbf0; }
+  .editable input, .editable select {
+    width: 100%; border: 1px solid var(--accent-md); border-radius: 3px;
+    padding: 3px 6px; font-size: 12px; font-family: inherit; outline: none;
+    background: #fff;
+  }
+  .edit-hint { font-size: 10px; color: var(--ink-3); font-style: italic; }
+
+  /* ── Link generator (Table B) ── */
+  .link-cell { display: flex; flex-direction: column; gap: 4px; }
+  .link-display { font-size: 11px; color: var(--accent-md); font-family: var(--mono); word-break: break-all; line-height: 1.4; }
+  .link-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+  .btn-copy { background: var(--accent-lt); color: var(--accent); border: 1px solid #c8d8ea; }
+  .btn-copy:hover { background: var(--accent); color: #fff; }
+  .btn-mail { background: var(--ok-lt); color: var(--ok); border: 1px solid #a8d5b8; }
+  .btn-mail:hover { background: var(--ok); color: #fff; }
+  .copied-flash { font-size: 10px; color: var(--ok); display: none; }
+  .copied-flash.visible { display: inline; }
+
+  /* ── Add row form ── */
+  .add-row-panel { margin-top: 16px; background: var(--bg-card); border: 1px dashed var(--line-2); border-radius: var(--radius-lg); padding: 20px; }
+  .add-row-panel h3 { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+  .add-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .add-field { display: flex; flex-direction: column; gap: 4px; }
+  .add-field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+  .add-field input, .add-field select {
+    padding: 7px 10px; border: 1px solid var(--line-2); border-radius: var(--radius);
+    font-size: 12px; font-family: inherit; outline: none;
+  }
+  .add-field input:focus, .add-field select:focus { border-color: var(--accent-md); }
+  .add-row-actions { margin-top: 14px; display: flex; gap: 8px; }
+
+  /* ── FORM_BASE_URL config banner ── */
+  .config-banner { background: var(--warn-lt); border: 1px solid #f3d5a3; border-radius: var(--radius); padding: 10px 16px; margin-bottom: 20px; font-size: 12px; color: var(--warn); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .config-banner strong { font-weight: 600; }
+  .config-banner input { flex: 1; min-width: 300px; padding: 6px 10px; border: 1px solid #f3d5a3; border-radius: var(--radius); font-size: 12px; font-family: var(--mono); background: #fff; outline: none; }
+  .config-banner input:focus { border-color: var(--warn); }
+
+  /* ── Summary stats ── */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 18px; flex: 1; min-width: 120px; }
+  .stat-val { font-size: 24px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+  .stat-label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,58,92,0.5); z-index: 500; align-items: center; justify-content: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: var(--ink-3); margin-bottom: 16px; }
+  .modal textarea { width: 100%; padding: 10px; border: 1px solid var(--line-2); border-radius: var(--radius); font-size: 12px; font-family: var(--mono); resize: vertical; min-height: 100px; outline: none; }
+  .modal textarea:focus { border-color: var(--accent-md); }
+  .modal-actions { margin-top: 14px; display: flex; gap: 8px; justify-content: flex-end; }
+
+  @media (max-width: 700px) {
+    .add-grid { grid-template-columns: 1fr 1fr; }
+    .stats-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="logo">CHRONOS</div>
+    <div class="sub">TBM Monitoring — World Index</div>
+  </div>
+  <div class="header-right">
+    <div class="badge-count" id="tbm-count-badge">— TBMs</div>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total TBMs</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-ongoing">—</div><div class="stat-label">Ongoing</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-tostart">—</div><div class="stat-label">To start</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-completed">—</div><div class="stat-label">Completed</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-countries">—</div><div class="stat-label">Countries</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tabA', this)">📋 Table A — Project & TBM Data</button>
+    <button class="tab-btn" onclick="switchTab('tabB', this)">📨 Table B — Form Distribution</button>
+  </div>
+
+  <!-- ═══ TABLE A ═══ -->
+  <div class="tab-panel active" id="tabA">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h2>Project & TBM Technical Data</h2>
+        <p>Click any cell to edit inline. Changes are saved locally in the browser.</p>
+      </div>
+      <div class="toolbar">
+        <input class="search-box" type="text" placeholder="🔍 Filter…" oninput="filterTable('tableA', this.value)">
+        <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelA')">+ Add TBM</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV('tableA','CHRONOS_TBM_Data')">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="tableA">
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>Project</th>
+            <th>TBM ID</th>
+            <th>S/N</th>
+            <th>Typology</th>
+            <th>Supplier</th>
+            <th>Project Status</th>
+            <th>Foreseen Status</th>
+            <th>Ø [m]</th>
+            <th>Tunnel / Site</th>
+            <th>Tot. TBMs</th>
+          </tr>
+        </thead>
+        <tbody id="bodyA"></tbody>
+      </table>
+    </div>
+
+    <div class="add-row-panel" id="addPanelA" style="display:none;">
+      <h3>Add new TBM entry</h3>
+      <div class="add-grid">
+        <div class="add-field"><label>Country</label><input id="nA-country" placeholder="e.g. France"></div>
+        <div class="add-field"><label>Project</label><input id="nA-project" placeholder="e.g. TELT CO67"></div>
+        <div class="add-field"><label>TBM ID</label><input id="nA-tbmid" placeholder="e.g. TBM 1"></div>
+        <div class="add-field"><label>S/N</label><input id="nA-sn" placeholder="e.g. HK S1356"></div>
+        <div class="add-field"><label>Typology</label>
+          <select id="nA-typology">
+            <option>EPB</option><option>Single Shield</option><option>Double Shield</option>
+            <option>Dual Mode</option><option>Variable Density</option><option>Slurry</option><option>TBM</option>
+          </select>
+        </div>
+        <div class="add-field"><label>Supplier</label>
+          <select id="nA-supplier"><option>HK</option><option>CREG</option><option>CRCHI</option><option>NFM</option><option>Robbins</option><option>Other</option></select>
+        </div>
+        <div class="add-field"><label>Project Status</label>
+          <select id="nA-status">
+            <option>Ongoing</option><option>To start in 2026</option><option>To start in 2027</option>
+            <option>To start in 2028</option><option>Completed</option><option>FAT</option>
+          </select>
+        </div>
+        <div class="add-field"><label>Foreseen Status</label><input id="nA-foreseen" placeholder="N / U"></div>
+        <div class="add-field"><label>Ø [m]</label><input id="nA-diam" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="add-field"><label>Tunnel / Site</label><input id="nA-tunnel" placeholder="e.g. Main line"></div>
+        <div class="add-field"><label>Tot. TBMs</label><input id="nA-tot" type="number" placeholder="1"></div>
+      </div>
+      <div class="add-row-actions">
+        <button class="btn btn-primary" onclick="addRowA()">+ Add row</button>
+        <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelA')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TABLE B ═══ -->
+  <div class="tab-panel" id="tabB">
+
+    <div class="config-banner">
+      <strong>⚙ Form URL base:</strong>
+      <input type="text" id="form-base-url" placeholder="e.g. https://yourserver.com/CHRONOS_form.html" oninput="refreshAllLinks()">
+      <span style="font-size:11px; opacity:0.8;">Paste the URL where CHRONOS_form.html is hosted</span>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h2>Form Distribution</h2>
+        <p>Generate, copy and send pre-filled form links to each site referent.</p>
+      </div>
+      <div class="toolbar">
+        <input class="search-box" type="text" placeholder="🔍 Filter…" oninput="filterTable('tableB', this.value)">
+        <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelB')">+ Add entry</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV('tableB','CHRONOS_Contacts')">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="tableB">
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>Project</th>
+            <th>Tunnel / TBM</th>
+            <th>Site Referent</th>
+            <th>Mail Site Referent</th>
+            <th>Owner HQ</th>
+            <th>Mail Owner HQ</th>
+            <th>Form link & actions</th>
+          </tr>
+        </thead>
+        <tbody id="bodyB"></tbody>
+      </table>
+    </div>
+
+    <div class="add-row-panel" id="addPanelB" style="display:none;">
+      <h3>Add new contact entry</h3>
+      <div class="add-grid">
+        <div class="add-field"><label>Country</label><input id="nB-country" placeholder="e.g. France"></div>
+        <div class="add-field"><label>Project</label><input id="nB-project" placeholder="e.g. TELT CO67"></div>
+        <div class="add-field"><label>Tunnel / TBM</label><input id="nB-tunnel" placeholder="e.g. CO7 GN09"></div>
+        <div class="add-field"><label>Site Referent</label><input id="nB-siteref" placeholder="First Last"></div>
+        <div class="add-field"><label>Mail Site Referent</label><input id="nB-sitemail" placeholder="email@company.com"></div>
+        <div class="add-field"><label>Owner HQ</label><input id="nB-hqref" placeholder="First Last"></div>
+        <div class="add-field"><label>Mail Owner HQ</label><input id="nB-hqmail" placeholder="email@webuildgroup.com"></div>
+      </div>
+      <div class="add-row-actions">
+        <button class="btn btn-primary" onclick="addRowB()">+ Add row</button>
+        <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelB')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Email modal -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <h3>📨 Send form link by email</h3>
+    <div class="modal-sub" id="modal-sub">Compose the email to send to the site referent.</div>
+    <textarea id="modal-body" rows="8"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ok" onclick="openMailClient()">Open in mail client</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────
+const dataA = [
+  { country:'FRANCE',       project:'TELT CO67',                      tbmid:'TBM 1', sn:'HK S1356',    typology:'Single Shield',    supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:10.40,  tunnel:'CO7 GN09',          tot:3 },
+  { country:'',             project:'TELT CO67',                      tbmid:'TBM 2', sn:'HK S1357',    typology:'Single Shield',    supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:10.40,  tunnel:'CO6 GN14',          tot:'' },
+  { country:'',             project:'TELT CO67',                      tbmid:'TBM 3', sn:'HK S1355',    typology:'Single Shield',    supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:10.40,  tunnel:'CO6 GN13',          tot:'' },
+  { country:'',             project:'Grand Paris Ligne 15 Ouest',     tbmid:'TBM 1', sn:'CREG ex L16', typology:'EPB',              supplier:'CREG',  status:'To start in 2026', foreseen:'U', diam:9.86,   tunnel:'Main line',          tot:1 },
+  { country:'ROMANIA',      project:'Sibiu Pitesti',                  tbmid:'TBM 1', sn:'CRCHI',       typology:'EPB',              supplier:'CRCHI', status:'To start in 2026', foreseen:'N', diam:12.40,  tunnel:'Poiana tunnel',      tot:1 },
+  { country:'AUSTRALIA',    project:'Snowy 2.0 Project',              tbmid:'TBM 1', sn:'HK',          typology:'Single Shield',    supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:11.09,  tunnel:'ECVT + IPS',         tot:4 },
+  { country:'',             project:'Snowy 2.0 Project',              tbmid:'TBM 2', sn:'CREG',        typology:'Single Shield',    supplier:'CREG',  status:'Completed',        foreseen:'N', diam:11.09,  tunnel:'TBM2 TRT Talbingo',  tot:'' },
+  { country:'',             project:'Snowy 2.0 Project',              tbmid:'TBM 3', sn:'HK',          typology:'Dual Mode',        supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:11.09,  tunnel:'HRT Tantangara',     tot:'' },
+  { country:'',             project:'Snowy 2.0 Project',              tbmid:'TBM 4', sn:'HK',          typology:'EPB/Slurry',       supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:12.01,  tunnel:'LPFZ',               tot:'' },
+  { country:'',             project:'North East Link (NEL)',          tbmid:'TBM 1', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:15.50,  tunnel:'TBM 1',              tot:2 },
+  { country:'',             project:'North East Link (NEL)',          tbmid:'TBM 2', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:15.50,  tunnel:'TBM 2',              tot:'' },
+  { country:'',             project:'SRL Package D',                  tbmid:'TBM 1', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2026', foreseen:'N', diam:7.24,   tunnel:'TBM 1',              tot:4 },
+  { country:'',             project:'SRL Package D',                  tbmid:'TBM 2', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2026', foreseen:'N', diam:7.24,   tunnel:'TBM 2',              tot:'' },
+  { country:'',             project:'SRL Package D',                  tbmid:'TBM 3', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:7.24,   tunnel:'TBM 3',              tot:'' },
+  { country:'',             project:'SRL Package D',                  tbmid:'TBM 4', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:7.24,   tunnel:'TBM 4',              tot:'' },
+  { country:'CANADA',       project:'PTUS',                           tbmid:'TBM 1', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:6.98,   tunnel:'TBM 1',              tot:2 },
+  { country:'',             project:'PTUS',                           tbmid:'TBM 2', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:6.98,   tunnel:'TBM 2',              tot:'' },
+  { country:"PERU'",        project:'Metro Linea 2',                  tbmid:'TBM 1', sn:'HK S972',     typology:'EPB',              supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:10.20,  tunnel:'Line 2',             tot:2 },
+  { country:'',             project:'Metro Linea 2',                  tbmid:'TBM 2', sn:'HK S973',     typology:'Variable Density', supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:10.20,  tunnel:'Line 4',             tot:'' },
+  { country:'SAUDI ARABIA', project:'Riyadh Metro Line 2 Extension', tbmid:'TBM 1', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:11.10,  tunnel:'Main line',          tot:1 },
+  { country:'USA',          project:'Palisades (New York)',           tbmid:'TBM 1', sn:'HK',          typology:'Single Shield',    supplier:'HK',    status:'To start in 2026', foreseen:'N', diam:8.80,   tunnel:'TBM 1',              tot:2 },
+  { country:'',             project:'Palisades (New York)',           tbmid:'TBM 2', sn:'HK',          typology:'Single Shield',    supplier:'HK',    status:'To start in 2026', foreseen:'N', diam:8.80,   tunnel:'TBM 2',              tot:'' },
+  { country:'',             project:'Alcosan (Pennsylvania)',         tbmid:'TBM 1', sn:'HK',          typology:'Single Shield',    supplier:'HK',    status:'To start in 2028', foreseen:'N', diam:6.47,   tunnel:'ORT',                tot:2 },
+  { country:'',             project:'Alcosan (Pennsylvania)',         tbmid:'TBM 2', sn:'HK',          typology:'Single Shield',    supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:5.20,   tunnel:'CCT',                tot:'' },
+];
+
+const dataB = [
+  { country:'FRANCE',       project:'TELT CO67',                     tunnel:'CO7 GN09',      siteRef:'Maurizio Roganti',    siteMail:'m.roganti@webuildgroup.fr',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN14',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'',               hqMail:'' },
+  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN13',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'',               hqMail:'' },
+  { country:'',             project:'Grand Paris Ligne 15 Ouest',    tunnel:'Main line',     siteRef:"Gabriele Dell'Ava",   siteMail:'g.dellava@webuildgroup.fr',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'ROMANIA',      project:'Sibiu Pitesti',                 tunnel:'Poiana tunnel', siteRef:'Francesco De Santis', siteMail:'f.desantis@webuildgroup.ro',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'AUSTRALIA',    project:'Snowy 2.0 Project',             tunnel:'ECVT + IPS',    siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Snowy 2.0 Project',             tunnel:'HRT Tantangara',siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Snowy 2.0 Project',             tunnel:'LPFZ',          siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 3',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 4',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'CANADA',       project:'PTUS',                          tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'PTUS',                          tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:"PERU'",        project:'Metro Linea 2',                 tunnel:'Line 2',        siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Metro Linea 2',                 tunnel:'Line 4',        siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'SAUDI ARABIA', project:'Riyadh Metro Line 2 Extension',tunnel:'Main line',     siteRef:'Mauro Pelati',        siteMail:'mauro.pelati@cwg-metro.com',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'USA',          project:'Palisades (New York)',          tunnel:'TBM 1',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Palisades (New York)',          tunnel:'TBM 2',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'ORT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'CCT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+];
+
+// ── Helpers ─────────────────────────────────────────────────
+function statusClass(s) {
+  s = (s||'').toLowerCase();
+  if (s.includes('ongoing'))   return 'status-ongoing';
+  if (s.includes('completed')) return 'status-completed';
+  if (s.includes('fat'))       return 'status-fat';
+  return 'status-tostart';
+}
+function enc(s) { return encodeURIComponent(s||''); }
+function formUrl(project, tunnel) {
+  const base = document.getElementById('form-base-url')?.value?.trim();
+  if (!base) return '(set form URL above)';
+  return `${base}?project=${enc(project)}&tunnel=${enc(tunnel)}`;
+}
+
+// ── Render Table A ───────────────────────────────────────────
+function resolveCountry(data, i) {
+  // Walk backwards to find the last non-empty country
+  for (let j = i; j >= 0; j--) {
+    if (data[j].country && data[j].country.trim() !== '') return data[j].country;
+  }
+  return '—';
+}
+
+function renderA() {
+  const body = document.getElementById('bodyA');
+
+  // Pre-compute: for each row, resolved country + project span info
+  // Group consecutive rows by project to build rowspan for Tot.TBMs
+  const rows = dataA.map((r, i) => ({
+    ...r,
+    _country: resolveCountry(dataA, i)
+  }));
+
+  // Build project groups for Tot.TBMs rowspan
+  // A group = consecutive rows with same project name
+  const projectSpans = {}; // key = first index of group, value = count
+  let gi = 0;
+  while (gi < rows.length) {
+    const proj = rows[gi].project;
+    let count = 1;
+    while (gi + count < rows.length && rows[gi + count].project === proj) count++;
+    projectSpans[gi] = count;
+    gi += count;
+  }
+  const projectFirstRows = new Set(Object.keys(projectSpans).map(Number));
+  const projectSecondaryRows = new Set();
+  Object.entries(projectSpans).forEach(([start, count]) => {
+    for (let k = 1; k < count; k++) projectSecondaryRows.add(Number(start) + k);
+  });
+
+  body.innerHTML = rows.map((r, i) => {
+    const totCell = projectFirstRows.has(i)
+      ? `<td class="mono" rowspan="${projectSpans[i]}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; background:#f0f4f8;">${r.tot || '—'}</td>`
+      : '';
+    const skipTot = projectSecondaryRows.has(i) ? '' : '';
+    return `
+    <tr>
+      <td class="country-cell editable" onclick="editCell(this,'country',${i},'A')">${r._country}</td>
+      <td class="project-cell editable" onclick="editCell(this,'project',${i},'A')">${r.project}</td>
+      <td class="mono editable" onclick="editCell(this,'tbmid',${i},'A')">${r.tbmid}</td>
+      <td class="mono editable" onclick="editCell(this,'sn',${i},'A')">${r.sn}</td>
+      <td class="editable" onclick="editCell(this,'typology',${i},'A')">${r.typology}</td>
+      <td class="editable" onclick="editCell(this,'supplier',${i},'A')">${r.supplier}</td>
+      <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
+      <td class="editable mono" onclick="editCell(this,'foreseen',${i},'A')">${r.foreseen}</td>
+      <td class="mono editable" onclick="editCell(this,'diam',${i},'A')">${r.diam ? parseFloat(r.diam).toFixed(2) : '—'}</td>
+      <td class="tunnel-cell editable" onclick="editCell(this,'tunnel',${i},'A')">${r.tunnel}</td>
+      ${projectSecondaryRows.has(i) ? '' : totCell}
+    </tr>`;
+  }).join('');
+  updateStats();
+}
+
+// ── Render Table B ───────────────────────────────────────────
+function renderB() {
+  const body = document.getElementById('bodyB');
+  body.innerHTML = dataB.map((r, i) => {
+    const url = formUrl(r.project, r.tunnel);
+    const country = resolveCountry(dataB, i);
+    return `
+    <tr>
+      <td class="country-cell editable" onclick="editCell(this,'country',${i},'B')">${country}</td>
+      <td class="project-cell editable" onclick="editCell(this,'project',${i},'B')">${r.project}</td>
+      <td class="tunnel-cell editable" onclick="editCell(this,'tunnel',${i},'B')">${r.tunnel}</td>
+      <td class="editable" onclick="editCell(this,'siteRef',${i},'B')">${r.siteRef || '<span class="edit-hint">—</span>'}</td>
+      <td class="editable mono" onclick="editCell(this,'siteMail',${i},'B')">${r.siteMail || '<span class="edit-hint">—</span>'}</td>
+      <td class="editable" onclick="editCell(this,'hqRef',${i},'B')">${r.hqRef || '<span class="edit-hint">—</span>'}</td>
+      <td class="editable mono" onclick="editCell(this,'hqMail',${i},'B')">${r.hqMail || '<span class="edit-hint">—</span>'}</td>
+      <td>
+        <div class="link-cell">
+          <div class="link-display" id="link-${i}">${url}</div>
+          <div class="link-actions">
+            <button class="btn btn-sm btn-copy btn-secondary" onclick="copyLink(${i})">📋 Copy</button>
+            <button class="btn btn-sm btn-mail btn-secondary" onclick="openEmailModal(${i})">✉ Email</button>
+            <span class="copied-flash" id="flash-${i}">✓ Copied!</span>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Inline edit ──────────────────────────────────────────────
+function editCell(td, field, idx, table) {
+  if (td.querySelector('input, select')) return;
+  const data = table === 'A' ? dataA : dataB;
+  const val = data[idx][field] || '';
+  const input = document.createElement('input');
+  input.value = val;
+  input.style.cssText = 'width:100%; border:1px solid var(--accent-md); border-radius:3px; padding:3px 6px; font-size:12px; font-family:inherit; outline:none;';
+  td.innerHTML = '';
+  td.appendChild(input);
+  input.focus();
+  const save = () => {
+    data[idx][field] = input.value;
+    if (table === 'A') renderA(); else renderB();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { if (table === 'A') renderA(); else renderB(); } });
+}
+
+// ── Add rows ─────────────────────────────────────────────────
+function addRowA() {
+  dataA.push({
+    country: document.getElementById('nA-country').value,
+    project: document.getElementById('nA-project').value,
+    tbmid:   document.getElementById('nA-tbmid').value,
+    sn:      document.getElementById('nA-sn').value,
+    typology:document.getElementById('nA-typology').value,
+    supplier:document.getElementById('nA-supplier').value,
+    status:  document.getElementById('nA-status').value,
+    foreseen:document.getElementById('nA-foreseen').value,
+    diam:    document.getElementById('nA-diam').value,
+    tunnel:  document.getElementById('nA-tunnel').value,
+    tot:     document.getElementById('nA-tot').value,
+  });
+  renderA();
+  toggleAddPanel('addPanelA');
+}
+
+function addRowB() {
+  dataB.push({
+    country: document.getElementById('nB-country').value,
+    project: document.getElementById('nB-project').value,
+    tunnel:  document.getElementById('nB-tunnel').value,
+    siteRef: document.getElementById('nB-siteref').value,
+    siteMail:document.getElementById('nB-sitemail').value,
+    hqRef:   document.getElementById('nB-hqref').value,
+    hqMail:  document.getElementById('nB-hqmail').value,
+  });
+  renderB();
+  toggleAddPanel('addPanelB');
+}
+
+// ── Link actions ─────────────────────────────────────────────
+function copyLink(i) {
+  const url = formUrl(dataB[i].project, dataB[i].tunnel);
+  navigator.clipboard.writeText(url).then(() => {
+    const f = document.getElementById('flash-'+i);
+    f.classList.add('visible');
+    setTimeout(() => f.classList.remove('visible'), 2000);
+  });
+}
+
+let modalIdx = -1;
+function openEmailModal(i) {
+  modalIdx = i;
+  const r = dataB[i];
+  const url = formUrl(r.project, r.tunnel);
+  document.getElementById('modal-sub').textContent = `To: ${r.siteRef || '(referent)'} <${r.siteMail || '—'}>`;
+  document.getElementById('modal-body').value =
+`Dear ${r.siteRef || 'Sir/Madam'},
+
+Please find below the link to submit the CHRONOS bi-monthly production report for:
+
+  Project: ${r.project}
+  Tunnel / TBM: ${r.tunnel}
+
+Form link:
+${url}
+
+Please complete and submit the form within 3 days of receipt.
+
+Best regards,
+CHRONOS — Webuild Tunnelling Division`;
+  document.getElementById('email-modal').classList.add('visible');
+}
+
+function closeModal() { document.getElementById('email-modal').classList.remove('visible'); }
+
+function openMailClient() {
+  if (modalIdx < 0) return;
+  const r = dataB[modalIdx];
+  const body = document.getElementById('modal-body').value;
+  const subj = encodeURIComponent(`CHRONOS — Report request: ${r.project} / ${r.tunnel}`);
+  const to   = encodeURIComponent(r.siteMail || '');
+  const cc   = encodeURIComponent(r.hqMail || '');
+  window.location.href = `mailto:${to}?cc=${cc}&subject=${subj}&body=${encodeURIComponent(body)}`;
+  closeModal();
+}
+
+// ── Refresh all links when base URL changes ──────────────────
+function refreshAllLinks() { renderB(); }
+
+// ── Filter ───────────────────────────────────────────────────
+function filterTable(tableId, q) {
+  q = q.toLowerCase();
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ── Export CSV ───────────────────────────────────────────────
+function exportCSV(tableId, filename) {
+  const rows = [];
+  const table = document.getElementById(tableId);
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('th, td')].map(c => '"' + c.textContent.replace(/"/g,'""').trim() + '"');
+    rows.push(cells.join(','));
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename + '.csv';
+  a.click();
+}
+
+// ── Toggle add panel ─────────────────────────────────────────
+function toggleAddPanel(id) {
+  const p = document.getElementById(id);
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchTab(panelId, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Stats ────────────────────────────────────────────────────
+function updateStats() {
+  const total     = dataA.length;
+  const ongoing   = dataA.filter(r => r.status?.toLowerCase().includes('ongoing')).length;
+  const tostart   = dataA.filter(r => r.status?.toLowerCase().includes('start')).length;
+  const completed = dataA.filter(r => r.status?.toLowerCase().includes('completed')).length;
+  const countries = new Set(dataA.map(r => r.country).filter(Boolean)).size;
+  document.getElementById('stat-total').textContent     = total;
+  document.getElementById('stat-ongoing').textContent   = ongoing;
+  document.getElementById('stat-tostart').textContent   = tostart;
+  document.getElementById('stat-completed').textContent = completed;
+  document.getElementById('stat-countries').textContent = countries;
+  document.getElementById('tbm-count-badge').textContent = total + ' TBMs';
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderA();
+renderB();
+</script>
+</body>
+</html>
