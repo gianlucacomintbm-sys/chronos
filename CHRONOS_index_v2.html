@@ -703,9 +703,82 @@ function updateStats() {
   document.getElementById('tbm-count-badge').textContent = total + ' TBMs';
 }
 
-// ── Init ─────────────────────────────────────────────────────
-renderA();
-renderB();
+// ── Init — load from Sheets if available, else use defaults ──
+const LOADING_BANNER = `
+  <div id="loading-banner" style="background:var(--accent-lt); border:1px solid #c8d8ea; border-radius:var(--radius); padding:10px 16px; margin-bottom:16px; font-size:12px; color:var(--accent); display:flex; align-items:center; gap:10px;">
+    <span style="animation:spin 1s linear infinite; display:inline-block;">⏳</span>
+    <span>Loading latest data from Google Sheets…</span>
+  </div>`;
+
+async function initIndex() {
+  // Show loading indicator
+  document.getElementById('tabA').insertAdjacentHTML('afterbegin', LOADING_BANNER);
+  document.getElementById('tabB').insertAdjacentHTML('afterbegin', LOADING_BANNER);
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=getIndex');
+    const json = await resp.json();
+
+    if (json.status === 'ok') {
+      // ── Table A ──────────────────────────────────────────────
+      if (json.tableA && json.tableA.length > 0) {
+        dataA.length = 0;
+        json.tableA.forEach(r => dataA.push({
+          country:  r.country  || '',
+          project:  r.project  || '',
+          tbmid:    r.tbmid    || '',
+          sn:       r.sn       || '',
+          typology: r.typology || '',
+          supplier: r.supplier || '',
+          status:   r.status   || '',
+          foreseen: r.foreseen || '',
+          diam:     r.diam     || '',
+          tunnel:   r.tunnel   || '',
+          tot:      r.tot      || '',
+        }));
+      }
+
+      // ── Table B ──────────────────────────────────────────────
+      if (json.tableB && json.tableB.length > 0) {
+        dataB.length = 0;
+        json.tableB.forEach(r => dataB.push({
+          country:  r.country  || '',
+          project:  r.project  || '',
+          tunnel:   r.tunnel   || '',
+          siteRef:  r.siteRef  || '',
+          siteMail: r.siteMail || '',
+          hqRef:    r.hqRef    || '',
+          hqMail:   r.hqMail   || '',
+        }));
+      }
+
+      // Show source indicator
+      showSourceBadge('☁ Data loaded from Google Sheets');
+    } else {
+      showSourceBadge('📄 Using local data (Sheets not available)');
+    }
+  } catch(err) {
+    console.warn('Could not load from Sheets:', err.message);
+    showSourceBadge('📄 Using local data (offline)');
+  }
+
+  // Remove loading banners and render
+  document.querySelectorAll('#loading-banner').forEach(el => el.remove());
+  renderA();
+  renderB();
+}
+
+function showSourceBadge(msg) {
+  const isCloud = msg.includes('☁');
+  const color   = isCloud ? 'var(--ok)' : 'var(--warn)';
+  const bg      = isCloud ? 'var(--ok-lt)' : 'var(--warn-lt)';
+  const badge   = `<div style="font-size:11px; color:${color}; background:${bg}; border-radius:20px; padding:3px 10px; display:inline-block; margin-bottom:12px;">${msg}</div>`;
+  document.getElementById('tabA').insertAdjacentHTML('afterbegin', badge);
+  document.getElementById('tabB').insertAdjacentHTML('afterbegin', badge);
+}
+
+// Start
+initIndex();
 </script>
 </body>
 </html>
