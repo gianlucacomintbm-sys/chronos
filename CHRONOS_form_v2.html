@@ -611,13 +611,19 @@ document.getElementById('tunnel').value = TUNNEL_NAME;
 
 // ── Pre-fill from last submission ───────────────────────────
 function toDateInput(val) {
-  if (!val) return '';
+  if (!val && val !== 0) return '';
   const s = String(val).trim();
+  if (!s || s === 'undefined' || s === 'null') return '';
   // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // ISO datetime e.g. 2026-06-19T22:00:00.000Z — take first 10 chars
-  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0, 10);
-  // Try parsing as Date
+  // ISO datetime — take first 10 chars: 2026-06-19T22:00:00.000Z → 2026-06-19
+  if (s.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+  // Numeric (Excel serial date) — convert
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const d = new Date(Math.round((parseFloat(s) - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) return d.toISOString().substring(0, 10);
+  }
+  // Fallback: try Date constructor
   const d = new Date(s);
   if (!isNaN(d.getTime())) return d.toISOString().substring(0, 10);
   return '';
@@ -1013,3 +1019,4 @@ async function submitForm() {
 </script>
 </body>
 </html>
+
