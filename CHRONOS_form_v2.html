@@ -188,6 +188,12 @@
     <div class="progress-step" data-step="4"><div class="step-num">4</div>Review &amp; send</div>
   </nav>
 
+  <!-- Pre-fill banner -->
+  <div id="prefill-banner" style="display:none; background:var(--ok-lt); border:1px solid #a8d5b8; border-radius:var(--radius); padding:10px 16px; margin-bottom:20px; font-size:12px; color:var(--ok); align-items:center; gap:12px; flex-wrap:wrap;">
+    <span>✅ <strong>Pre-filled</strong> from last submission dated <strong id="prefill-date">—</strong>. Project status, milestones and critical issues have been carried forward. Production start values updated from previous end values. Please review and complete.</span>
+    <button type="button" onclick="document.getElementById('prefill-banner').style.display='none'" style="background:none; border:none; cursor:pointer; color:var(--ok); font-size:16px; margin-left:auto;">×</button>
+  </div>
+
   <form id="main-form" novalidate>
 
     <!-- PAGE 1 — Project info -->
@@ -232,43 +238,140 @@
         </div>
       </div>
 
+      <!-- PROJECT MILESTONES -->
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">🏁</div><div class="section-title">Project milestones</div><span class="section-note">Insert actual or foreseen dates</span></div>
+        <div class="section-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="field">
+              <label>FAT date</label>
+              <input type="date" name="milestone_fat">
+            </div>
+            <div class="field">
+              <label>SAT date</label>
+              <input type="date" name="milestone_sat">
+            </div>
+            <div class="field">
+              <label>RTB (Ready to Bore) date</label>
+              <input type="date" name="milestone_rtb">
+            </div>
+            <div class="field">
+              <label>TBM excavation end — foreseen</label>
+              <input type="date" name="milestone_exc_end">
+            </div>
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label>Notes and observations</label>
+            <div class="notes-area"><textarea name="milestone_notes" placeholder="Any relevant notes on milestones (delays, revisions, contractual constraints…)"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECT STATUS -->
       <div class="section-card">
         <div class="section-head"><div class="section-icon">⚙️</div><div class="section-title">Project status</div><span class="section-note">Multiple selection — referred to TBM drives</span></div>
         <div class="section-body">
+          <!-- ── Main status grid ── -->
           <div class="checkbox-grid">
-            <label class="check-item"><input type="checkbox" name="status" value="FAT"><span class="check-label">FAT</span></label>
+            <label class="check-item"><input type="checkbox" name="status" value="TBM storage"><span class="check-label">TBM storage</span></label>
             <label class="check-item"><input type="checkbox" name="status" value="Preparatory civil works"><span class="check-label">Preparatory civil works</span></label>
             <label class="check-item"><input type="checkbox" name="status" value="TBM preassembly"><span class="check-label">TBM preassembly</span></label>
             <label class="check-item"><input type="checkbox" name="status" value="TBM assembly"><span class="check-label">TBM assembly</span></label>
             <label class="check-item"><input type="checkbox" name="status" value="TBM commissioning"><span class="check-label">TBM commissioning</span></label>
-            <label class="check-item"><input type="checkbox" name="status" value="TBM learning curve"><span class="check-label">TBM learning curve</span></label>
-            <label class="check-item"><input type="checkbox" name="status" value="On-going"><span class="check-label">On-going</span></label>
             <label class="check-item"><input type="checkbox" name="status" value="TBM dismantling"><span class="check-label">TBM dismantling</span></label>
             <div class="check-item has-detail">
-              <div class="check-row"><input type="checkbox" id="cb-planned" name="status" value="Planned standstill"><span class="check-label">Planned standstill</span></div>
-              <div class="check-detail" id="detail-planned"><input type="text" name="planned_standstill_detail" placeholder="Specify reason…"></div>
-            </div>
-            <div class="check-item has-detail">
-              <div class="check-row"><input type="checkbox" id="cb-unplanned" name="status" value="Unplanned standstill"><span class="check-label">Unplanned standstill</span></div>
-              <div class="check-detail" id="detail-unplanned"><input type="text" name="unplanned_standstill_detail" placeholder="Specify reason…"></div>
-            </div>
-            <div class="check-item has-detail">
               <div class="check-row"><input type="checkbox" id="cb-drive" name="status" value="Drive completed"><span class="check-label">Drive completed</span></div>
-              <div class="check-detail" id="detail-drive">
-                <input type="date" name="drive_completed_date" style="width:100%">
-              </div>
-            </div>
-            <div class="check-item has-detail">
-              <div class="check-row"><input type="checkbox" id="cb-rtb" name="status" value="Ready to Bore (RTB)"><span class="check-label">Ready to Bore (RTB)</span></div>
-              <div class="check-detail" id="detail-rtb">
-                <input type="date" name="rtb_date" style="width:100%">
-              </div>
-            </div>
-            <div class="check-item has-detail" style="grid-column:span 2">
-              <div class="check-row"><input type="checkbox" id="cb-other" name="status" value="Other critical issues"><span class="check-label">Other critical issues or events penalizing the project</span></div>
-              <div class="check-detail" id="detail-other"><input type="text" name="other_issues_detail" placeholder="Specify…"></div>
+              <div class="check-detail" id="detail-drive"><input type="date" name="drive_completed_date" style="width:100%"></div>
             </div>
             <p class="check-note">NOTE: multiple selection accepted</p>
+          </div>
+
+          <!-- ── ON-GOING block ── -->
+          <div style="margin-top:14px; border:2px solid var(--accent-md); border-radius:var(--radius-lg); overflow:hidden;">
+            <div style="background:var(--accent); padding:10px 16px; display:flex; align-items:center; gap:10px;">
+              <input type="checkbox" name="status" value="On-going" id="cb-ongoing" style="accent-color:#fff; width:16px; height:16px;">
+              <label for="cb-ongoing" style="font-size:13px; font-weight:700; color:#fff; cursor:pointer; letter-spacing:0.04em; text-transform:uppercase;">On-going</label>
+            </div>
+            <div style="padding:14px 16px; background:#f5f8fc; display:flex; flex-direction:column; gap:10px;">
+
+              <!-- TBM learning curve -->
+              <label class="check-item" style="background:#fff;">
+                <input type="checkbox" name="status" value="TBM learning curve">
+                <span class="check-label">TBM learning curve</span>
+              </label>
+
+              <!-- Planned standstill -->
+              <div class="check-item has-detail" style="background:#fff; border-color:#e8dfc8;">
+                <div class="check-row">
+                  <input type="checkbox" id="cb-planned" name="status" value="Planned standstill">
+                  <span class="check-label">Planned standstill
+                    <span style="font-size:10px; color:var(--warn); font-style:italic; margin-left:6px;">(flag only if standstill ≥ reporting period)</span>
+                  </span>
+                </div>
+                <div class="check-detail" id="detail-planned">
+                  <input type="text" name="planned_standstill_detail" placeholder="Specify reason…" style="margin-bottom:8px;">
+                  <label style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-3);">TBM Excavation restart foreseen</label>
+                  <input type="date" name="planned_restart_date" style="width:100%; margin-top:4px;">
+                </div>
+              </div>
+
+              <!-- Unplanned standstill -->
+              <div class="check-item has-detail" style="background:#fff; border-color:#e8dfc8;">
+                <div class="check-row">
+                  <input type="checkbox" id="cb-unplanned" name="status" value="Unplanned standstill">
+                  <span class="check-label">Unplanned standstill
+                    <span style="font-size:10px; color:var(--warn); font-style:italic; margin-left:6px;">(flag only if standstill ≥ reporting period)</span>
+                  </span>
+                </div>
+                <div class="check-detail" id="detail-unplanned">
+                  <input type="text" name="unplanned_standstill_detail" placeholder="Specify reason…" style="margin-bottom:8px;">
+                  <label style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-3);">TBM Excavation restart foreseen</label>
+                  <input type="date" name="unplanned_restart_date" style="width:100%; margin-top:4px;">
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── Critical issues block ── -->
+          <div style="margin-top:14px; border:2px solid #e8b4b4; border-radius:var(--radius-lg); overflow:hidden;">
+            <div style="background:#7a2020; padding:10px 16px;">
+              <span style="font-size:13px; font-weight:700; color:#fff; letter-spacing:0.04em; text-transform:uppercase;">⚠ Critical issues or events penalizing the project</span>
+            </div>
+            <div style="padding:14px 16px; background:#fff8f8; display:flex; flex-direction:column; gap:10px;">
+
+              <div class="check-item has-detail" style="background:#fff;">
+                <div class="check-row"><input type="checkbox" id="cb-ci-tbm" name="critical_issue" value="TBM problems"><span class="check-label">TBM problems</span></div>
+                <div class="check-detail" id="detail-ci-tbm"><input type="text" name="ci_tbm_detail" placeholder="Specify…"></div>
+              </div>
+
+              <div class="check-item has-detail" style="background:#fff;">
+                <div class="check-row"><input type="checkbox" id="cb-ci-lining" name="critical_issue" value="Segmental lining issues"><span class="check-label">Segmental lining issues</span></div>
+                <div class="check-detail" id="detail-ci-lining"><input type="text" name="ci_lining_detail" placeholder="Specify…"></div>
+              </div>
+
+              <div class="check-item has-detail" style="background:#fff;">
+                <div class="check-row"><input type="checkbox" id="cb-ci-geo" name="critical_issue" value="Geological accidents"><span class="check-label">Geological accidents</span></div>
+                <div class="check-detail" id="detail-ci-geo"><input type="text" name="ci_geo_detail" placeholder="Specify…"></div>
+              </div>
+
+              <div class="check-item has-detail" style="background:#fff;">
+                <div class="check-row"><input type="checkbox" id="cb-ci-log" name="critical_issue" value="Logistic/site organization defects"><span class="check-label">Logistic/site organization defects</span></div>
+                <div class="check-detail" id="detail-ci-log"><input type="text" name="ci_log_detail" placeholder="Specify…"></div>
+              </div>
+
+              <div class="check-item has-detail" style="background:#fff;">
+                <div class="check-row"><input type="checkbox" id="cb-ci-other" name="critical_issue" value="Other"><span class="check-label">Other</span></div>
+                <div class="check-detail" id="detail-ci-other"><input type="text" name="ci_other_detail" placeholder="Specify…"></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Further clarifications -->
+          <div class="field" style="margin-top:16px;">
+            <label>Further clarifications</label>
+            <div class="notes-area"><textarea name="further_clarifications" placeholder="Any additional information relevant to the current project status…"></textarea></div>
           </div>
         </div>
       </div>
@@ -323,7 +426,7 @@
           </div>
           <div class="numeric-row">
             <div class="numeric-label">Standstill time</div>
-            <div class="numeric-input-wrap"><input type="number" name="standstill_time" placeholder="0.0" step="0.1" min="0"><span class="unit-badge">m</span></div>
+            <div class="numeric-input-wrap"><input type="number" name="standstill_time" id="standstill-time-input" placeholder="0.0" step="0.1" min="0" oninput="updateStandstillWarning()"><span class="unit-badge">h</span></div>
           </div>
           <div class="computed-field" id="computed-field-wrap">
             <span class="computed-label">Total production (period)</span>
@@ -342,9 +445,10 @@
           <span class="section-note">Sum of hours must equal Standstill time</span>
         </div>
         <div class="section-body">
-          <div style="display:grid; grid-template-columns:100px 1fr 36px; gap:8px; margin-bottom:8px;">
-            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Hours</div>
-            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Description</div>
+          <div style="display:grid; grid-template-columns:90px 1fr 130px 36px; gap:8px; margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Hours [h]</div>
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Description / reason</div>
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3);">Type</div>
             <div></div>
           </div>
           <div id="standstill-rows"></div>
@@ -368,9 +472,13 @@
     <!-- PAGE 3 — Attachments -->
     <div class="form-page" data-page="3">
 
+      <!-- PROJECT DOCUMENTS -->
       <div class="section-card">
-        <div class="section-head"><div class="section-icon">📄</div><div class="section-title">Project documents</div><span class="section-note">Reports, photos, drawings…</span></div>
+        <div class="section-head"><div class="section-icon">📄</div><div class="section-title">Project documents</div><span class="section-note">Monthly/weekly reports, summaries…</span></div>
         <div class="section-body">
+          <div style="background:var(--accent-lt); border:1px solid #c8d8ea; border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:12px; color:var(--accent);">
+            <strong>📌 Note:</strong> Upload monthly reports, weekly reports or other summary documents with the aim to support and better describe what previously stated in the form. These documents could be documents already available — no need to produce specific ones.
+          </div>
           <div class="upload-zone" id="zone-docs" ondragover="handleDragOver(event,'docs')" ondragleave="handleDragLeave('docs')" ondrop="handleDrop(event,'docs')">
             <input type="file" id="input-docs" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.zip" onchange="handleFiles(this.files,'docs')">
             <div class="upload-icon">📂</div>
@@ -381,6 +489,7 @@
         </div>
       </div>
 
+      <!-- TBM OPERATIONAL DATA -->
       <div class="section-card">
         <div class="section-head"><div class="section-icon">🔩</div><div class="section-title">TBM operational data</div><span class="section-note">Daily log — Sheet 2 format</span></div>
         <div class="section-body">
@@ -389,6 +498,7 @@
             <table>
               <tr><th>Column</th><th>Unit</th><th>Note</th></tr>
               <tr><td>Day</td><td>—</td><td>1–15 (1st half) or 16–end (2nd half)</td></tr>
+              <tr><td>Chainage reached</td><td>m</td><td>Chainage at end of day</td></tr>
               <tr><td>Advance speed</td><td>mm/min</td><td>Avg boring time</td></tr>
               <tr><td>Penetration</td><td>mm/rev</td><td>Avg boring time</td></tr>
               <tr><td>Total thrust force</td><td>kN</td><td>Avg boring time</td></tr>
@@ -410,6 +520,23 @@
             <div class="upload-hint">Excel (.xlsx, .xls) or CSV &nbsp;·&nbsp; <strong>Max 50 MB per file</strong></div>
           </div>
           <div class="file-list" id="list-tbm"></div>
+        </div>
+      </div>
+
+      <!-- SIGNIFICANT PICTURES -->
+      <div class="section-card">
+        <div class="section-head"><div class="section-icon">📷</div><div class="section-title">Significant pictures</div><span class="section-note">Site photos, anomalies, key events</span></div>
+        <div class="section-body">
+          <div style="background:#f5f0ff; border:1px solid #d4c5f0; border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:12px; color:#5b3fa6;">
+            <strong>📌 Note:</strong> Upload significant photos from the period — TBM face, segmental lining, geological features, incidents, or any relevant site condition worth documenting.
+          </div>
+          <div class="upload-zone" id="zone-pics" ondragover="handleDragOver(event,'pics')" ondragleave="handleDragLeave('pics')" ondrop="handleDrop(event,'pics')">
+            <input type="file" id="input-pics" multiple accept=".jpg,.jpeg,.png,.heic,.webp,.bmp" onchange="handleFiles(this.files,'pics')">
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-title">Drop photos here or click to browse</div>
+            <div class="upload-hint">JPG, PNG, HEIC, WebP &nbsp;·&nbsp; <strong>Max 50 MB per file</strong></div>
+          </div>
+          <div class="file-list" id="list-pics"></div>
         </div>
       </div>
 
@@ -482,8 +609,99 @@ document.getElementById('header-project-name').textContent = PROJECT_NAME;
 document.getElementById('country-project').value = PROJECT_NAME;
 document.getElementById('tunnel').value = TUNNEL_NAME;
 
+// ── Pre-fill from last submission ───────────────────────────
+async function loadLastSubmit() {
+  if (PROJECT_NAME === 'Project not specified') return;
+  try {
+    const url = APPS_SCRIPT_URL
+      + '?action=lastSubmit'
+      + '&project=' + encodeURIComponent(PROJECT_NAME)
+      + '&tunnel='  + encodeURIComponent(TUNNEL_NAME);
+    const resp = await fetch(url);
+    const json = await resp.json();
+    if (json.status !== 'ok') return;
+
+    const d = json.data;
+
+    // Show pre-fill banner
+    const banner = document.getElementById('prefill-banner');
+    if (banner) {
+      const ts = d['Timestamp'] ? new Date(d['Timestamp']).toLocaleDateString() : '—';
+      document.getElementById('prefill-date').textContent = ts;
+      banner.style.display = 'flex';
+    }
+
+    // ── Project Status — copy as-is ──────────────────────────
+    const statuses = (d['Project status'] || '').split(' | ').map(s => s.trim());
+    document.querySelectorAll('[name="status"]').forEach(cb => {
+      cb.checked = statuses.includes(cb.value);
+      cb.dispatchEvent(new Event('change'));
+    });
+
+    // Standstill details
+    if (d['Planned standstill — detail']) {
+      document.querySelector('[name="planned_standstill_detail"]').value = d['Planned standstill — detail'];
+    }
+    if (d['Unplanned standstill — detail']) {
+      document.querySelector('[name="unplanned_standstill_detail"]').value = d['Unplanned standstill — detail'];
+    }
+    if (d['Planned restart foreseen date']) {
+      document.querySelector('[name="planned_restart_date"]').value = d['Planned restart foreseen date'];
+    }
+    if (d['Unplanned restart foreseen date']) {
+      document.querySelector('[name="unplanned_restart_date"]').value = d['Unplanned restart foreseen date'];
+    }
+    if (d['Drive completed — date']) {
+      document.querySelector('[name="drive_completed_date"]').value = d['Drive completed — date'];
+    }
+
+    // ── Critical issues — copy as-is ────────────────────────
+    const ciValues = (d['Critical issues'] || '').split(' | ').map(s => s.trim());
+    document.querySelectorAll('[name="critical_issue"]').forEach(cb => {
+      cb.checked = ciValues.includes(cb.value);
+      cb.dispatchEvent(new Event('change'));
+    });
+    const ciMap = {
+      'ci_tbm_detail':    d['CI — TBM problems'],
+      'ci_lining_detail': d['CI — Segmental lining issues'],
+      'ci_geo_detail':    d['CI — Geological accidents'],
+      'ci_log_detail':    d['CI — Logistic/site organization'],
+      'ci_other_detail':  d['CI — Other'],
+    };
+    Object.entries(ciMap).forEach(([name, val]) => {
+      if (val) { const el = document.querySelector('[name="'+name+'"]'); if (el) el.value = val; }
+    });
+
+    // ── Milestones — copy as-is ──────────────────────────────
+    const milestoneMap = {
+      'milestone_fat':     d['Milestone — FAT date'],
+      'milestone_sat':     d['Milestone — SAT date'],
+      'milestone_rtb':     d['Milestone — RTB date'],
+      'milestone_exc_end': d['Milestone — Excavation end foreseen'],
+      'milestone_notes':   d['Milestone — Notes'],
+    };
+    Object.entries(milestoneMap).forEach(([name, val]) => {
+      if (val) { const el = document.querySelector('[name="'+name+'"]'); if (el) el.value = val; }
+    });
+
+    // ── Production — end → start, rest empty ────────────────
+    const prevEnd      = d['Cumulative prod. end [m]'];
+    const prevChainage = d['Chainage end [m]'];
+    if (prevEnd      !== '') { document.getElementById('cum-start').value      = prevEnd;      }
+    if (prevChainage !== '') { document.getElementById('chainage-start').value = prevChainage; }
+    computeProduction();
+
+    // Boring/ring/standstill times → left empty (new period)
+    // Standstill rows → cleared (default 1 empty row already added)
+
+  } catch(err) {
+    console.warn('Pre-fill failed:', err.message);
+  }
+}
+
+
 // ── File store ──────────────────────────────────────────────
-const fileStore = { docs: [], tbm: [] };
+const fileStore = { docs: [], tbm: [], pics: [] };
 const FILE_ICONS = { pdf:'📕', xlsx:'📗', xls:'📗', csv:'📊', doc:'📘', docx:'📘', ppt:'📙', pptx:'📙', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', zip:'🗜️' };
 const getIcon = f => FILE_ICONS[f.split('.').pop().toLowerCase()] || '📄';
 const fmtSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
@@ -536,7 +754,7 @@ function addStandstillRow() {
   const id = 'sr-' + standstillRowCount;
   const div = document.createElement('div');
   div.id = id;
-  div.style.cssText = 'display:grid; grid-template-columns:100px 1fr 36px; gap:8px; margin-bottom:8px;';
+  div.style.cssText = 'display:grid; grid-template-columns:90px 1fr 130px 36px; gap:8px; margin-bottom:8px;';
   div.innerHTML = `
     <div style="position:relative;">
       <input type="number" min="0" step="0.1" placeholder="0.0"
@@ -547,6 +765,11 @@ function addStandstillRow() {
     <input type="text" placeholder="Description of standstill event…"
       style="width:100%; padding:9px 12px; border:1px solid var(--line-2); border-radius:var(--radius); font-size:14px; font-family:inherit; outline:none;"
       class="sr-desc">
+    <select class="sr-type"
+      style="width:100%; padding:9px 12px; border:1px solid var(--line-2); border-radius:var(--radius); font-size:13px; font-family:inherit; outline:none; background:#fff; appearance:none; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath d=%22M1 1l5 5 5-5%22 stroke=%22%23888%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px;">
+      <option value="Planned">Planned</option>
+      <option value="Unplanned">Unplanned</option>
+    </select>
     <button type="button" onclick="removeStandstillRow('${id}')"
       style="background:none; border:1px solid var(--line-2); border-radius:var(--radius); cursor:pointer; color:var(--ink-3); font-size:16px; line-height:1; transition:all 0.12s;"
       onmouseover="this.style.color='var(--err)'; this.style.borderColor='var(--err)'"
@@ -580,12 +803,12 @@ function updateStandstillSum() {
 document.addEventListener('DOMContentLoaded', () => {
   const stField = document.querySelector('[name="standstill_time"]');
   if (stField) stField.addEventListener('input', updateStandstillSum);
-  // Add first row by default
   addStandstillRow();
+  loadLastSubmit();
 });
 
 // ── Checkbox details toggle ─────────────────────────────────
-['planned','unplanned','other','drive','rtb'].forEach(id => {
+['planned','unplanned','other','drive','ci-tbm','ci-lining','ci-geo','ci-log','ci-other'].forEach(id => {
   const cb = document.getElementById('cb-'+id);
   const det = document.getElementById('detail-'+id);
   if (cb && det) cb.addEventListener('change', () => det.classList.toggle('visible', cb.checked));
@@ -641,7 +864,8 @@ function getStandstillNotes() {
   return rows.map(row => {
     const h = row.querySelector('.sr-hours')?.value || '0';
     const d = row.querySelector('.sr-desc')?.value || '';
-    return h && d ? h + ' h => ' + d : '';
+    const t = row.querySelector('.sr-type')?.value || '';
+    return h && d ? h + ' h [' + t + '] => ' + d : '';
   }).filter(Boolean).join('\n');
 }
 
@@ -652,6 +876,7 @@ function buildSummary() {
   const totalProd = document.getElementById('total-prod-val').textContent;
   const docCount = fileStore.docs.length;
   const tbmCount = fileStore.tbm.length;
+  const picCount = fileStore.pics.length;
   document.getElementById('summary-body').innerHTML = `
     <div class="summary-section-head">Period &amp; project</div>
     <table class="summary-table">
@@ -676,6 +901,7 @@ function buildSummary() {
     <table class="summary-table">
       <tr><td>Project documents</td><td>${docCount ? docCount+' file(s): '+fileStore.docs.map(f=>f.name).join(', ') : 'None'}</td></tr>
       <tr><td>TBM operational data</td><td>${tbmCount ? tbmCount+' file(s): '+fileStore.tbm.map(f=>f.name).join(', ') : 'None'}</td></tr>
+      <tr><td>Significant pictures</td><td>${picCount ? picCount+' file(s): '+fileStore.pics.map(f=>f.name).join(', ') : 'None'}</td></tr>
     </table>`;
 }
 
@@ -707,6 +933,20 @@ async function submitForm() {
     other_issues_detail: fd.get('other_issues_detail') || '',
     drive_completed_date: fd.get('drive_completed_date') || '',
     rtb_date: fd.get('rtb_date') || '',
+    milestone_fat: fd.get('milestone_fat') || '',
+    milestone_sat: fd.get('milestone_sat') || '',
+    milestone_rtb: fd.get('milestone_rtb') || '',
+    milestone_exc_end: fd.get('milestone_exc_end') || '',
+    milestone_notes: fd.get('milestone_notes') || '',
+    planned_restart_date: fd.get('planned_restart_date') || '',
+    unplanned_restart_date: fd.get('unplanned_restart_date') || '',
+    further_clarifications: fd.get('further_clarifications') || '',
+    critical_issues: [...document.querySelectorAll('[name="critical_issue"]:checked')].map(c => c.value).join(' | '),
+    ci_tbm_detail:    fd.get('ci_tbm_detail')    || '',
+    ci_lining_detail: fd.get('ci_lining_detail') || '',
+    ci_geo_detail:    fd.get('ci_geo_detail')    || '',
+    ci_log_detail:    fd.get('ci_log_detail')    || '',
+    ci_other_detail:  fd.get('ci_other_detail')  || '',
     cum_prod_start: fd.get('cum_prod_start') || '',
     cum_prod_end: fd.get('cum_prod_end') || '',
     total_production: document.getElementById('total-prod-val').textContent,
@@ -721,12 +961,14 @@ async function submitForm() {
     submitter_email: fd.get('submitter_email'),
     submitted_at: new Date().toISOString(),
     files_docs: [],
-    files_tbm: []
+    files_tbm: [],
+    files_pics: []
   };
 
   try {
-    for (const f of fileStore.docs) payload.files_docs.push({ name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
-    for (const f of fileStore.tbm)  payload.files_tbm.push({  name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
+    for (const f of fileStore.docs)  payload.files_docs.push({ name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
+    for (const f of fileStore.tbm)   payload.files_tbm.push({  name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
+    for (const f of fileStore.pics)  payload.files_pics.push({ name: f.name, type: f.type, size: f.size, data: await fileToBase64(f) });
   } catch(e) {
     alert('Error reading files. Please try again.');
     document.getElementById('submit-overlay').classList.remove('visible');
