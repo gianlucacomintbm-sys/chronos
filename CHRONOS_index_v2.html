@@ -190,6 +190,7 @@
       <div class="toolbar">
         <input class="search-box" type="text" placeholder="🔍 Filter…" oninput="filterTable('tableA', this.value)">
         <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelA')">+ Add TBM</button>
+        <button class="btn btn-ok" onclick="saveIndexToSheets()">☁ Save to Sheets</button>
         <button class="btn btn-secondary btn-sm" onclick="exportCSV('tableA','CHRONOS_TBM_Data')">⬇ Export CSV</button>
       </div>
     </div>
@@ -254,7 +255,7 @@
 
     <div class="config-banner">
       <strong>⚙ Form URL base:</strong>
-      <input type="text" id="form-base-url" placeholder="e.g. https://yourserver.com/CHRONOS_form.html" oninput="refreshAllLinks()">
+      <input type="text" id="form-base-url" placeholder="e.g. https://yourserver.com/CHRONOS_form.html" value="https://gianlucacomintbm-sys.github.io/chronos/CHRONOS_form_v2.html" oninput="refreshAllLinks()">
       <span style="font-size:11px; opacity:0.8;">Paste the URL where CHRONOS_form.html is hosted</span>
     </div>
 
@@ -266,6 +267,7 @@
       <div class="toolbar">
         <input class="search-box" type="text" placeholder="🔍 Filter…" oninput="filterTable('tableB', this.value)">
         <button class="btn btn-secondary" onclick="toggleAddPanel('addPanelB')">+ Add entry</button>
+        <button class="btn btn-ok" onclick="saveIndexToSheets()">☁ Save to Sheets</button>
         <button class="btn btn-secondary btn-sm" onclick="exportCSV('tableB','CHRONOS_Contacts')">⬇ Export CSV</button>
       </div>
     </div>
@@ -321,6 +323,23 @@
   </div>
 </div>
 
+<!-- Preview modal -->
+<div class="modal-overlay" id="preview-modal" style="align-items:stretch; padding:20px;">
+  <div style="background:var(--bg-card); border-radius:var(--radius-lg); width:100%; max-width:900px; margin:auto; display:flex; flex-direction:column; overflow:hidden; max-height:90vh;">
+    <div style="padding:16px 20px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+      <div>
+        <div style="font-size:14px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">👁 Form Preview</div>
+        <div style="font-size:11px; opacity:0.7; margin-top:2px;" id="preview-subtitle">—</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3);" onclick="openFormInNewTab()">↗ Open form</button>
+        <button style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer; opacity:0.8;" onclick="closePreview()">×</button>
+      </div>
+    </div>
+    <iframe id="preview-iframe" style="flex:1; border:none; min-height:600px;" src="about:blank"></iframe>
+  </div>
+</div>
+
 <script>
 // ── DATA ────────────────────────────────────────────────────
 const dataA = [
@@ -339,8 +358,8 @@ const dataA = [
   { country:'',             project:'SRL Package D',                  tbmid:'TBM 2', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2026', foreseen:'N', diam:7.24,   tunnel:'TBM 2',              tot:'' },
   { country:'',             project:'SRL Package D',                  tbmid:'TBM 3', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:7.24,   tunnel:'TBM 3',              tot:'' },
   { country:'',             project:'SRL Package D',                  tbmid:'TBM 4', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:7.24,   tunnel:'TBM 4',              tot:'' },
-  { country:'CANADA',       project:'PTUS',                           tbmid:'TBM 1', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:6.98,   tunnel:'TBM 1',              tot:2 },
-  { country:'',             project:'PTUS',                           tbmid:'TBM 2', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2027', foreseen:'N', diam:6.98,   tunnel:'TBM 2',              tot:'' },
+  { country:'CANADA',       project:'PTUS',                           tbmid:'TBM 1', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2028', foreseen:'N', diam:6.98,   tunnel:'TBM 1',              tot:2 },
+  { country:'',             project:'PTUS',                           tbmid:'TBM 2', sn:'HK',          typology:'EPB',              supplier:'HK',    status:'To start in 2028', foreseen:'N', diam:6.98,   tunnel:'TBM 2',              tot:'' },
   { country:"PERU'",        project:'Metro Linea 2',                  tbmid:'TBM 1', sn:'HK S972',     typology:'EPB',              supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:10.20,  tunnel:'Line 2',             tot:2 },
   { country:'',             project:'Metro Linea 2',                  tbmid:'TBM 2', sn:'HK S973',     typology:'Variable Density', supplier:'HK',    status:'Ongoing',          foreseen:'N', diam:10.20,  tunnel:'Line 4',             tot:'' },
   { country:'SAUDI ARABIA', project:'Riyadh Metro Line 2 Extension', tbmid:'TBM 1', sn:'CREG',        typology:'EPB',              supplier:'CREG',  status:'To start in 2027', foreseen:'N', diam:11.10,  tunnel:'Main line',          tot:1 },
@@ -351,29 +370,29 @@ const dataA = [
 ];
 
 const dataB = [
-  { country:'FRANCE',       project:'TELT CO67',                     tunnel:'CO7 GN09',      siteRef:'Maurizio Roganti',    siteMail:'m.roganti@webuildgroup.fr',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN14',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'',               hqMail:'' },
-  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN13',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'',               hqMail:'' },
-  { country:'',             project:'Grand Paris Ligne 15 Ouest',    tunnel:'Main line',     siteRef:"Gabriele Dell'Ava",   siteMail:'g.dellava@webuildgroup.fr',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'ROMANIA',      project:'Sibiu Pitesti',                 tunnel:'Poiana tunnel', siteRef:'Francesco De Santis', siteMail:'f.desantis@webuildgroup.ro',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'AUSTRALIA',    project:'Snowy 2.0 Project',             tunnel:'ECVT + IPS',    siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'Snowy 2.0 Project',             tunnel:'HRT Tantangara',siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'Snowy 2.0 Project',             tunnel:'LPFZ',          siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'SRL Package D',                 tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'SRL Package D',                 tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'SRL Package D',                 tunnel:'TBM 3',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'SRL Package D',                 tunnel:'TBM 4',         siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'CANADA',       project:'PTUS',                          tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                      hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'',             project:'PTUS',                          tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                      hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:"PERU'",        project:'Metro Linea 2',                 tunnel:'Line 2',        siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'',             project:'Metro Linea 2',                 tunnel:'Line 4',        siteRef:'',                    siteMail:'',                                      hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
-  { country:'SAUDI ARABIA', project:'Riyadh Metro Line 2 Extension',tunnel:'Main line',     siteRef:'Mauro Pelati',        siteMail:'mauro.pelati@cwg-metro.com',            hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'USA',          project:'Palisades (New York)',          tunnel:'TBM 1',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'',             project:'Palisades (New York)',          tunnel:'TBM 2',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'ORT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
-  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'CCT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'FRANCE',       project:'TELT CO67',                     tunnel:'CO7 GN09',      siteRef:'Maurizio Roganti',    siteMail:'m.roganti@webuildgroup.fr',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN14',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'TELT CO67',                     tunnel:'CO6 GN13',      siteRef:'Nicolas Bsaibes',     siteMail:'nicolas.bsaibes@vinci-construction.com', hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Grand Paris Ligne 15 Ouest',    tunnel:'Main line',     siteRef:"Gabriele Dell'Ava",   siteMail:'g.dellava@webuildgroup.fr',              hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'ROMANIA',      project:'Sibiu Pitesti',                 tunnel:'Poiana tunnel', siteRef:'Francesco De Santis', siteMail:'f.desantis@webuildgroup.ro',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'AUSTRALIA',    project:'Snowy 2.0 Project',             tunnel:'ECVT + IPS',    siteRef:'Marco Cometti',       siteMail:'m.cometti@futuregenerationjv.com.au',    hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Snowy 2.0 Project',             tunnel:'HRT Tantangara',siteRef:'Marco Cometti',       siteMail:'m.cometti@futuregenerationjv.com.au',    hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Snowy 2.0 Project',             tunnel:'LPFZ',          siteRef:'Marco Cometti',       siteMail:'m.cometti@futuregenerationjv.com.au',    hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 1',         siteRef:'',                    siteMail:'',                                       hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'North East Link (NEL)',         tunnel:'TBM 2',         siteRef:'',                    siteMail:'',                                       hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 1',         siteRef:'Davide Rago',         siteMail:'davide.rago@terraverdejv.au',            hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 2',         siteRef:'Davide Rago',         siteMail:'davide.rago@terraverdejv.au',            hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 3',         siteRef:'Davide Rago',         siteMail:'davide.rago@terraverdejv.au',            hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'SRL Package D',                 tunnel:'TBM 4',         siteRef:'Davide Rago',         siteMail:'davide.rago@terraverdejv.au',            hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'CANADA',       project:'PTUS',                          tunnel:'TBM 1',         siteRef:'Salvatore La Manna',  siteMail:'s.lamanna@pncjv.ca',                    hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'PTUS',                          tunnel:'TBM 2',         siteRef:'Salvatore La Manna',  siteMail:'s.lamanna@pncjv.ca',                    hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:"PERU'",        project:'Metro Linea 2',                 tunnel:'Line 2',        siteRef:'Salvatore Iacullo',   siteMail:'siacullo@ccmetrolima.com',               hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'',             project:'Metro Linea 2',                 tunnel:'Line 4',        siteRef:'Salvatore Iacullo',   siteMail:'siacullo@ccmetrolima.com',               hqRef:'Roberto Bono',   hqMail:'r.bono@webuildgroup.com' },
+  { country:'SAUDI ARABIA', project:'Riyadh Metro Line 2 Extension',tunnel:'Main line',     siteRef:'Mauro Pelati',        siteMail:'mauro.pelati@cwg-metro.com',             hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'USA',          project:'Palisades (New York)',          tunnel:'TBM 1',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',              hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Palisades (New York)',          tunnel:'TBM 2',         siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',              hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'ORT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',              hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
+  { country:'',             project:'Alcosan (Pennsylvania)',        tunnel:'CCT',           siteRef:'Filippo Azzara',      siteMail:'fazzara@laneconstruct.com',              hqRef:'Gianluca Comin', hqMail:'g.comin@webuildgroup.com' },
 ];
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -471,6 +490,7 @@ function renderB() {
           <div class="link-actions">
             <button class="btn btn-sm btn-copy btn-secondary" onclick="copyLink(${i})">📋 Copy</button>
             <button class="btn btn-sm btn-mail btn-secondary" onclick="openEmailModal(${i})">✉ Email</button>
+            <button class="btn btn-sm btn-secondary" style="background:var(--accent-lt); color:var(--accent); border-color:#c8d8ea;" onclick="previewForm(${i})">👁 Preview</button>
             <span class="copied-flash" id="flash-${i}">✓ Copied!</span>
           </div>
         </div>
@@ -604,6 +624,56 @@ function exportCSV(tableId, filename) {
   a.click();
 }
 
+// ── Preview form ─────────────────────────────────────────────
+let previewIdx = -1;
+function previewForm(i) {
+  previewIdx = i;
+  const r = dataB[i];
+  const url = formUrl(r.project, r.tunnel);
+  if (url === '(set form URL above)') {
+    alert('Please set the Form URL base first.');
+    return;
+  }
+  document.getElementById('preview-subtitle').textContent = r.project + ' — ' + r.tunnel;
+  document.getElementById('preview-iframe').src = url;
+  document.getElementById('preview-modal').classList.add('visible');
+}
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('visible');
+  document.getElementById('preview-iframe').src = 'about:blank';
+}
+function openFormInNewTab() {
+  if (previewIdx < 0) return;
+  window.open(formUrl(dataB[previewIdx].project, dataB[previewIdx].tunnel), '_blank');
+}
+
+// ── Save index to Google Sheets ──────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzgM7yBwGkFC4Pv_R2ZOHSuybVf3ulKjmSpnPSd0pkZOo2CIsEP5pgoV-92pXgdKC1y/exec';
+
+async function saveIndexToSheets() {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Saving…';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveIndex', tableA: dataA, tableB: dataB })
+    });
+    const result = await resp.json();
+    if (result.status === 'ok') {
+      btn.textContent = '✓ Saved!';
+      btn.style.background = 'var(--ok)';
+      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.disabled = false; }, 2500);
+    } else {
+      throw new Error(result.message || 'Unknown error');
+    }
+  } catch(err) {
+    btn.textContent = orig;
+    btn.disabled = false;
+    alert('Save error: ' + err.message);
+  }
+}
 // ── Toggle add panel ─────────────────────────────────────────
 function toggleAddPanel(id) {
   const p = document.getElementById(id);
