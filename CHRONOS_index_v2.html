@@ -459,7 +459,7 @@ function renderA() {
       <td class="mono editable" onclick="editCell(this,'sn',${i},'A')">${r.sn}</td>
       <td class="editable" onclick="editCell(this,'typology',${i},'A')">${r.typology}</td>
       <td class="editable" onclick="editCell(this,'supplier',${i},'A')">${r.supplier}</td>
-      <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
+      <td><span class="status-badge ${statusClass(r.status)}" style="cursor:pointer;" onclick="editStatus(this,${i})">${r.status}</span></td>
       <td class="editable mono" onclick="editCell(this,'foreseen',${i},'A')">${r.foreseen}</td>
       <td class="mono editable" onclick="editCell(this,'diam',${i},'A')">${r.diam ? parseFloat(r.diam).toFixed(2) : '—'}</td>
       <td class="tunnel-cell editable" onclick="editCell(this,'tunnel',${i},'A')">${r.tunnel}</td>
@@ -497,6 +497,33 @@ function renderB() {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ── Edit Project Status ──────────────────────────────────────
+const STATUS_OPTIONS = [
+  'Ongoing', 'Completed', 'FAT',
+  'To start in 2025', 'To start in 2026', 'To start in 2027', 'To start in 2028', 'To start in 2029'
+];
+
+function editStatus(span, idx) {
+  const td = span.parentElement;
+  if (td.querySelector('select')) return;
+  const sel = document.createElement('select');
+  sel.style.cssText = 'width:100%; padding:5px 8px; border:1px solid var(--accent-md); border-radius:var(--radius); font-size:12px; font-family:inherit; outline:none; background:#fff;';
+  STATUS_OPTIONS.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt;
+    o.textContent = opt;
+    if (opt.toLowerCase() === (dataA[idx].status || '').toLowerCase()) o.selected = true;
+    sel.appendChild(o);
+  });
+  td.innerHTML = '';
+  td.appendChild(sel);
+  sel.focus();
+  const save = () => { dataA[idx].status = sel.value; renderA(); };
+  sel.addEventListener('change', save);
+  sel.addEventListener('blur', save);
+  sel.addEventListener('keydown', e => { if (e.key === 'Escape') renderA(); });
 }
 
 // ── Inline edit ──────────────────────────────────────────────
@@ -782,3 +809,4 @@ initIndex();
 </script>
 </body>
 </html>
+
