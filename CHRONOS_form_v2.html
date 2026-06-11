@@ -610,6 +610,15 @@ document.getElementById('country-project').value = PROJECT_NAME;
 document.getElementById('tunnel').value = TUNNEL_NAME;
 
 // ── Pre-fill from last submission ───────────────────────────
+function toDateInput(val) {
+  if (!val) return '';
+  // Already YYYY-MM-DD string
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) return val.substring(0, 10);
+  // Date object or date string
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().substring(0, 10);
+}
 async function loadLastSubmit() {
   if (PROJECT_NAME === 'Project not specified') return;
   try {
@@ -646,13 +655,13 @@ async function loadLastSubmit() {
       document.querySelector('[name="unplanned_standstill_detail"]').value = d['Unplanned standstill — detail'];
     }
     if (d['Planned restart foreseen date']) {
-      document.querySelector('[name="planned_restart_date"]').value = d['Planned restart foreseen date'];
+      document.querySelector('[name="planned_restart_date"]').value = toDateInput(d['Planned restart foreseen date']);
     }
     if (d['Unplanned restart foreseen date']) {
-      document.querySelector('[name="unplanned_restart_date"]').value = d['Unplanned restart foreseen date'];
+      document.querySelector('[name="unplanned_restart_date"]').value = toDateInput(d['Unplanned restart foreseen date']);
     }
     if (d['Drive completed — date']) {
-      document.querySelector('[name="drive_completed_date"]').value = d['Drive completed — date'];
+      document.querySelector('[name="drive_completed_date"]').value = toDateInput(d['Drive completed — date']);
     }
 
     // ── Critical issues — copy as-is ────────────────────────
@@ -672,7 +681,7 @@ async function loadLastSubmit() {
       if (val) { const el = document.querySelector('[name="'+name+'"]'); if (el) el.value = val; }
     });
 
-    // ── Milestones — copy as-is ──────────────────────────────
+    // ── Milestones — copy as-is with date formatting ─────────
     const milestoneMap = {
       'milestone_fat':     d['Milestone — FAT date'],
       'milestone_sat':     d['Milestone — SAT date'],
@@ -681,7 +690,10 @@ async function loadLastSubmit() {
       'milestone_notes':   d['Milestone — Notes'],
     };
     Object.entries(milestoneMap).forEach(([name, val]) => {
-      if (val) { const el = document.querySelector('[name="'+name+'"]'); if (el) el.value = val; }
+      if (val) {
+        const el = document.querySelector('[name="'+name+'"]');
+        if (el) el.value = el.type === 'date' ? toDateInput(val) : val;
+      }
     });
 
     // ── Production — end → start, rest empty ────────────────
